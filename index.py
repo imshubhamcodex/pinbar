@@ -101,29 +101,28 @@ while True:
             # Check if the entry timestamp is greater than the previous exit timestamp
             if prev_exit_timestamp is None or entry_timestamp > prev_exit_timestamp:
                 trade_type = "Short" if data.iloc[i]['IsRedPinbar'] else "Long"
-                trade_serial_number += 1
+                
                 exit_price = 0
 
-                inv_loss_factor = 5
-                earn_factor = 1.5
+                inv_loss_factor = 1.8
+                earn_factor = 0.4
 
                 if trade_type == "Short":
-                    stop_loss_points = round((
-                        data.iloc[i]['High'] - entry_price)/inv_loss_factor, 2)
-                    take_profit_points = round((
-                        entry_price - data.iloc[i]['Low'])*earn_factor, 2)
+                    stop_loss_points = abs((
+                        data.iloc[i]['Low'] - entry_price)/inv_loss_factor)
+                    take_profit_points = abs((
+                        entry_price - data.iloc[i]['High'])*earn_factor)
                 else:
-                    stop_loss_points = round((
-                        entry_price - data.iloc[i]['Low'])/inv_loss_factor, 2)
-                    take_profit_points = round((
-                        data.iloc[i]['High'] - entry_price)*earn_factor, 2)
+                    stop_loss_points = abs((
+                        entry_price - data.iloc[i]['High'])/inv_loss_factor)
+                    take_profit_points = abs((
+                        data.iloc[i]['Low'] - entry_price)*earn_factor)
 
-
-                if stop_loss_points <= 8 and take_profit_points  <= 16:
-                    stop_loss_points = stop_loss_points * 2
-                        
                 
-                if take_profit_points < 10 or stop_loss_points >= 30 or take_profit_points >= 80:
+                if stop_loss_points < 10:
+                    stop_loss_points = 10
+                    
+                if take_profit_points < 10 or stop_loss_points >= 35 or take_profit_points > 80:
                     continue
 
                 stop_loss_price = entry_price + \
@@ -132,7 +131,9 @@ while True:
                 take_profit_price = entry_price - \
                     take_profit_points if data.iloc[i]['IsRedPinbar'] else entry_price + \
                     take_profit_points
-
+                    
+                trade_serial_number += 1
+                
                 next_index = 0
                 for j in range(i + 1, len(data)):
                     next_row = data.iloc[j]
