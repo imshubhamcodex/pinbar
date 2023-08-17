@@ -122,6 +122,9 @@ while True:
                 if stop_loss_points < 10:
                     stop_loss_points = 10
                     
+                if stop_loss_points < 15 and take_profit_points > 40:
+                    take_profit_points = 20
+                    
                 if take_profit_points < 10 or stop_loss_points >= 35 or take_profit_points > 80:
                     continue
 
@@ -187,7 +190,17 @@ while True:
 
                     prev_exit_timestamp = exit_timestamp
                     prev_entry_timestamp = entry_timestamp
-
+                else:
+                    # print("No Profit No Loss")
+                    exit_timestamp = "N/A"
+                    exit_price = "N/A"
+                    entry_exit_difference = "N/A"
+                    profit = "N/A"
+                    final_profit_points = "N/A"
+                    trade_duration = "N/A"
+                    time_between_trades = "N/A"
+                    
+                    
                 trade_details.append([
                     trade_serial_number,
                     trade_type,
@@ -227,18 +240,18 @@ while True:
 
     total_trade_taken = len(trade_details)
 
-    print("\nDetailed File Generating: Trade_Details.txt")
+    
     headers = ["Trade #", "Trade Type", "Entry Time", "Exit Time", "Entry Price", "Exit Price",
                "Entry-Exit", "Profit", "Cum. Profit", "TP", "SL", "Active For", "Time Between Trades"]
     with open("Trade_Details.txt", "w") as f:
         f.write(tabulate(trade_details, headers=headers, tablefmt="grid"))
-    print("Done")
+    print("\nDetailed File Generated: Trade_Details.txt")
 
     print("\nTrade Overview Details:")
     time_frame = "1Hr"
     summary_data = [
         ["Trade taken on Time Frame", f"{time_frame}"],
-        ["Maximum SL","30"],
+        ["Maximum SL","35"],
         ["Minimum TP","10"],
         ["Total Trade Taken",
             f"{total_trade_taken} (Win:{num_winning_trades} Loss:{num_losing_trades})"],
@@ -251,6 +264,10 @@ while True:
     ]
     print(tabulate(summary_data, headers=["Metric", "Value"], tablefmt="grid"))
 
+    print("Made by imshubhamcodex.")
+    
+    
+    
     # Plotting code
     plt.figure(figsize=(12, 8))
     plt.plot(range(len(profit_points)), profit_points, label='Profit Points')
