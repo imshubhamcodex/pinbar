@@ -195,7 +195,7 @@ while True:
 
     total_trade_taken = len(trade_details)
 
-    print("\nDetailed File Generating: trade_details.txt")
+    print("\nDetailed File Generating: Trade_Details.txt")
     headers = ["Trade #", "Trade Type", "Entry Time", "Exit Time", "Entry Price", "Exit Price",
                "Entry-Exit Difference", "Profit", "Final Profit", "Trade Duration", "Time Between Trades"]
     with open("Trade_Details.txt", "w") as f:
