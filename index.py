@@ -118,7 +118,12 @@ while True:
                     take_profit_points = round((
                         data.iloc[i]['High'] - entry_price)*earn_factor, 2)
 
-                if take_profit_points < 10 or stop_loss_points >= 30 or stop_loss_points <= 5:
+
+                if stop_loss_points <= 8 and take_profit_points  <= 16:
+                    stop_loss_points = stop_loss_points * 2
+                        
+                
+                if take_profit_points < 10 or stop_loss_points >= 30 or take_profit_points >= 80:
                     continue
 
                 stop_loss_price = entry_price + \
