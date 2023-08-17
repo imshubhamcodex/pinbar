@@ -104,14 +104,11 @@ for i in range(len(data)):
                     profit = (exit_price - entry_price) * position_size
 
                 if profit < 0:
+                    max_profit_points = 0
                     consecutive_loss += abs(profit)
-                    if consecutive_loss > total_consecutive_loss:
-                        total_consecutive_loss = consecutive_loss
                 else:
                     consecutive_loss = 0
-
-                if final_profit_points > max_profit_points:
-                    max_profit_points = final_profit_points 
+                    max_profit_points += profit
 
 
                 trade_duration = exit_timestamp - entry_timestamp
@@ -134,6 +131,8 @@ for i in range(len(data)):
                 trade_type,
                 entry_timestamp,
                 exit_timestamp,
+                entry_price,
+                exit_price,
                 entry_exit_difference,
                 profit,
                 final_profit_points,
@@ -142,7 +141,7 @@ for i in range(len(data)):
             ])
 
             profit_points.append(final_profit_points)
-            loss_drawdown.append(total_consecutive_loss)
+            loss_drawdown.append(consecutive_loss)
             profit_overshoot.append(max_profit_points)
 
 # print(f"Initial Profit Points: {initial_profit_points:.2f}, Final Profit Points: {final_profit_points:.2f}")
@@ -154,14 +153,15 @@ last_trade_time = trade_details[-1][3]
 time_difference = last_trade_time - first_trade_time
 total_trade_duration = sum(trade_durations, pd.Timedelta(0))
 
-num_winning_trades = len([trade for trade in trade_details if trade[5] > 0])  # Assuming profit is stored at index 5
-num_losing_trades = len([trade for trade in trade_details if trade[5] < 0])  # Assuming profit is stored at index 5
+num_winning_trades = len([trade for trade in trade_details if trade[7] > 0])  
+num_losing_trades = len([trade for trade in trade_details if trade[7] < 0]) 
 win_to_loss_ratio = num_winning_trades / num_losing_trades if num_losing_trades != 0 else num_winning_trades
 win_to_loss_ratio_percentage = round(win_to_loss_ratio * 100, 2)
 
+total_trade_taken = len(trade_details)
 
 print("\nDetailed File Generating: trade_details.txt")
-headers = ["Trade #", "Trade Type", "Entry Time", "Exit Time", "Entry-Exit Difference", "Profit", "Final Profit", "Trade Duration", "Time Between Trades"]
+headers = ["Trade #", "Trade Type", "Entry Time", "Exit Time", "Entry Price", "Exit Price", "Entry-Exit Difference", "Profit", "Final Profit", "Trade Duration", "Time Between Trades"]
 with open("Trade_Details.txt", "w") as f:
     f.write(tabulate(trade_details, headers=headers, tablefmt="grid"))
 print("Done")
@@ -169,8 +169,8 @@ print("Done")
 print("\nTrade Overview Details:")
 time_frame = "1Hr"
 summary_data = [
-    ["Trade taken on Time Frame", time_frame],
-    ["Initial Profit Points", f"{initial_profit_points:.2f}"],
+    ["Trade taken on Time Frame", f"{time_frame}"],
+    ["Total Trade Taken", f"{total_trade_taken} (Win:{num_winning_trades} Loss:{num_losing_trades})"],
     ["Final Profit Points", f"{final_profit_points:.2f}"],
     ["Loss Drawdown", f"{total_consecutive_loss:.2f}"],
     ["Profit Overshoot", f"{max_profit_points:.2f}"],
