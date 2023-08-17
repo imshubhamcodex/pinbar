@@ -23,7 +23,7 @@ while True:
         upper_shadow = high_price - max(open_price, close_price)
         lower_shadow = min(open_price, close_price) - low_price
 
-        if body / total_range < 0.2 and upper_shadow / total_range > 0.6 and lower_shadow / upper_shadow < 0.35 and trend_direction == 'downtrend' and total_range > 50:
+        if body / total_range < 0.2 and upper_shadow / total_range > 0.6 and lower_shadow / upper_shadow < 0.35 and trend_direction == 'downtrend' and total_range > 40:
             return True
         return False
 
@@ -33,7 +33,7 @@ while True:
         upper_shadow = high_price - max(open_price, close_price)
         lower_shadow = min(open_price, close_price) - low_price
 
-        if body / total_range < 0.2 and lower_shadow / total_range > 0.6 and upper_shadow / lower_shadow < 0.35 and trend_direction == 'uptrend' and total_range > 50:
+        if body / total_range < 0.2 and lower_shadow / total_range > 0.6 and upper_shadow / lower_shadow < 0.35 and trend_direction == 'uptrend' and total_range > 40:
             return True
         return False
 
@@ -70,10 +70,10 @@ while True:
         user_input = ''.join(input_chars).strip()
         return user_input if user_input else default_value
 
-    stop_loss_points = float(get_input_with_timeout(
-        "Enter Stop Loss Points", 20, 10))
-    take_profit_points = float(get_input_with_timeout(
-        "Enter Take Profit Points", 90, 10))
+    # stop_loss_points = float(get_input_with_timeout(
+    #     "Enter Stop Loss Points", 20, 10))
+    # take_profit_points = float(get_input_with_timeout(
+    #     "Enter Take Profit Points", 90, 10))
     open_plot = get_input_with_timeout("Open plot (y/n)", "n", 10)
 
     initial_profit_points = 0
@@ -100,35 +100,58 @@ while True:
 
             # Check if the entry timestamp is greater than the previous exit timestamp
             if prev_exit_timestamp is None or entry_timestamp > prev_exit_timestamp:
+                trade_type = "Short" if data.iloc[i]['IsRedPinbar'] else "Long"
                 trade_serial_number += 1
                 exit_price = 0
+
+                inv_loss_factor = 5
+                earn_factor = 1.5
+
+                if trade_type == "Short":
+                    stop_loss_points = round((
+                        data.iloc[i]['High'] - entry_price)/inv_loss_factor, 2)
+                    take_profit_points = round((
+                        entry_price - data.iloc[i]['Low'])*earn_factor, 2)
+                else:
+                    stop_loss_points = round((
+                        entry_price - data.iloc[i]['Low'])/inv_loss_factor, 2)
+                    take_profit_points = round((
+                        data.iloc[i]['High'] - entry_price)*earn_factor, 2)
+
+                if take_profit_points < 10 or stop_loss_points >= 30 or stop_loss_points <= 5:
+                    continue
+
                 stop_loss_price = entry_price + \
                     stop_loss_points if data.iloc[i]['IsRedPinbar'] else entry_price - \
                     stop_loss_points
                 take_profit_price = entry_price - \
                     take_profit_points if data.iloc[i]['IsRedPinbar'] else entry_price + \
                     take_profit_points
-                trade_type = "Short" if data.iloc[i]['IsRedPinbar'] else "Long"
 
+                next_index = 0
                 for j in range(i + 1, len(data)):
                     next_row = data.iloc[j]
                     if trade_type == "Short":
-                        if next_row['High'] <= take_profit_price:
+                        if next_row['Low'] <= take_profit_price:
                             exit_price = take_profit_price
+                            next_index = j
                             break
-                        elif next_row['Low'] >= stop_loss_price:
+                        elif next_row['High'] >= stop_loss_price:
                             exit_price = stop_loss_price
+                            next_index = j
                             break
                     else:
-                        if next_row['Low'] >= take_profit_price:
+                        if next_row['High'] >= take_profit_price:
                             exit_price = take_profit_price
+                            next_index = j
                             break
-                        elif next_row['High'] <= stop_loss_price:
+                        elif next_row['Low'] <= stop_loss_price:
                             exit_price = stop_loss_price
+                            next_index = j
                             break
 
                 if exit_price > 0:
-                    exit_timestamp = data.index[j]
+                    exit_timestamp = data.index[next_index]
                     if trade_type == "Short":
                         profit = -1 * \
                             (exit_price - entry_price) * position_size
@@ -169,6 +192,8 @@ while True:
                     entry_exit_difference,
                     profit,
                     final_profit_points,
+                    take_profit_points,
+                    stop_loss_points,
                     trade_duration,
                     time_between_trades
                 ])
@@ -190,14 +215,15 @@ while True:
         [trade for trade in trade_details if trade[7] > 0])
     num_losing_trades = len([trade for trade in trade_details if trade[7] < 0])
     win_to_loss_ratio = num_winning_trades / \
-        num_losing_trades if num_losing_trades != 0 else num_winning_trades
-    win_to_loss_ratio_percentage = round(win_to_loss_ratio * 100, 2)
+        (num_losing_trades +
+         num_winning_trades) if num_losing_trades != 0 else num_winning_trades
+    win_percentage = round(win_to_loss_ratio * 100, 2)
 
     total_trade_taken = len(trade_details)
 
     print("\nDetailed File Generating: Trade_Details.txt")
     headers = ["Trade #", "Trade Type", "Entry Time", "Exit Time", "Entry Price", "Exit Price",
-               "Entry-Exit Difference", "Profit", "Final Profit", "Trade Duration", "Time Between Trades"]
+               "Entry-Exit", "Profit", "Cum. Profit", "TP", "SL", "Active For", "Time Between Trades"]
     with open("Trade_Details.txt", "w") as f:
         f.write(tabulate(trade_details, headers=headers, tablefmt="grid"))
     print("Done")
@@ -206,10 +232,12 @@ while True:
     time_frame = "1Hr"
     summary_data = [
         ["Trade taken on Time Frame", f"{time_frame}"],
+        ["Maximum SL","30"],
+        ["Minimum TP","10"],
         ["Total Trade Taken",
             f"{total_trade_taken} (Win:{num_winning_trades} Loss:{num_losing_trades})"],
         ["Final Profit Points", f"{final_profit_points:.2f}"],
-        ["Win-to-Loss Percent:", win_to_loss_ratio_percentage, "%"],
+        ["Win Percent:", win_percentage, "%"],
         ["Profit Factor",
             f"{round(take_profit_points / stop_loss_points, 2)}"],
         ["Active in Trade", f"{total_trade_duration}"],
@@ -244,8 +272,8 @@ while True:
         now = datetime.now(latest_trade[2].tzinfo)
         time_ago = now - latest_trade[2]
         latest_trade_formatted = [latest_trade_headers, [latest_trade[0], latest_trade[1], latest_trade[2], latest_trade[3], round(
-            latest_trade[4], 2), round(latest_trade[5], 2), latest_trade[7], latest_trade[8], str(time_ago)]]
+            latest_trade[4], 2), round(latest_trade[5], 2), round(latest_trade[7], 2), round(latest_trade[8], 2), str(time_ago)]]
         print(tabulate(latest_trade_formatted, tablefmt="grid"))
 
-    # Repeat After 15Min
+    # Repeat After 5Min
     time.sleep(5 * 60)
