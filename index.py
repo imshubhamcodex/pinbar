@@ -255,7 +255,7 @@ while True:
         ["Minimum TP","10"],
         ["Total Trade Taken",
             f"{total_trade_taken} (Win:{num_winning_trades} Loss:{num_losing_trades})"],
-        ["Final Profit Points", f"{final_profit_points:.2f}"],
+        ["Cumm. Profit Points", f"{final_profit_points:.2f}"],
         ["Win Percent:", win_percentage, "%"],
         ["Profit Factor",
             f"{round(take_profit_points / stop_loss_points, 2)}"],
@@ -288,11 +288,11 @@ while True:
     if latest_trade:
         print("\nLatest Trade:")
         latest_trade_headers = ["Trade #", "Trade Type", "Entry Time", "Exit Time",
-                                "Entry Price", "Exit Price", "Profit", "Final Profit", "Time Ago"]
+                                "Entry Price", "Exit Price", "Profit", "TP","SL", "Time Ago"]
         now = datetime.now(latest_trade[2].tzinfo)
         time_ago = now - latest_trade[2]
         latest_trade_formatted = [latest_trade_headers, [latest_trade[0], latest_trade[1], latest_trade[2], latest_trade[3], round(
-            latest_trade[4], 2), round(latest_trade[5], 2), round(latest_trade[7], 2), round(latest_trade[8], 2), str(time_ago)]]
+            latest_trade[4], 2), round(latest_trade[5], 2), round(latest_trade[7], 2), round(latest_trade[9],2),round(latest_trade[10],2), str(time_ago)]]
         print(tabulate(latest_trade_formatted, tablefmt="grid"))
 
 
