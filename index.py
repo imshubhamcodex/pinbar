@@ -45,7 +45,9 @@ def main(stdscr, options, head):
 
 if __name__ == "__main__":
     
-    menu_options = ["^NSEI", "^NSEBANK"]
+    #menu_options = ["^NSEBANK", "^NSEI"]
+    
+    menu_options = ["^NSEBANK"]
     
     selected_option = curses.wrapper(main, menu_options, "Choose Trading Asset")
     if selected_option is not None:
@@ -64,7 +66,7 @@ while True:
         upper_shadow = high_price - max(open_price, close_price)
         lower_shadow = min(open_price, close_price) - low_price
 
-        if body / total_range < 0.3 and upper_shadow / total_range > 0.6 and lower_shadow / upper_shadow < 0.35 and trend_direction == 'downtrend' and total_range > 40:
+        if body / total_range < 0.3 and upper_shadow / total_range > 0.6 and lower_shadow / upper_shadow < 0.35 and total_range > 40:
             return True
         return False
 
@@ -74,7 +76,7 @@ while True:
         upper_shadow = high_price - max(open_price, close_price)
         lower_shadow = min(open_price, close_price) - low_price
 
-        if body / total_range < 0.3 and lower_shadow / total_range > 0.6 and upper_shadow / lower_shadow < 0.35 and trend_direction == 'uptrend' and total_range > 40:
+        if body / total_range < 0.3 and lower_shadow / total_range > 0.6 and upper_shadow / lower_shadow < 0.35 and total_range > 40:
             return True
         return False
 
@@ -100,12 +102,12 @@ while True:
         start_time = time.time()
         input_chars = []
         while True:
-            if msvcrt.kbhit():  # Check if a key is pressed
-                char = msvcrt.getche()  # Get the character
-                if char == b'\r':  # Enter key is pressed
+            if msvcrt.kbhit():  
+                char = msvcrt.getche()
+                if char == b'\r': 
                     break
                 input_chars.append(char.decode('utf-8'))
-            elif time.time() - start_time > timeout_sec:  # Timeout reached
+            elif time.time() - start_time > timeout_sec:
                 break
 
         user_input = ''.join(input_chars).strip()
@@ -115,6 +117,7 @@ while True:
     #     "Enter Stop Loss Points", 20, 10))
     # take_profit_points = float(get_input_with_timeout(
     #     "Enter Take Profit Points", 90, 10))
+    
     open_plot = get_input_with_timeout("Open P/L plot (y/n)", "n", 5)
 
     initial_profit_points = 0
@@ -133,13 +136,12 @@ while True:
     loss_drawdown = [0]
     profit_overshoot = [0]
     x_values = [0]
-
+    count = 0
     for i in range(len(data)):
         if data.iloc[i]['IsRedPinbar'] or data.iloc[i]['IsGreenPinbar']:
-            entry_price = data.iloc[i]['Open']
+            entry_price = data.iloc[i]['Close']
             entry_timestamp = data.index[i]
 
-            # Check if the entry timestamp is greater than the previous exit timestamp
             if prev_exit_timestamp is None or entry_timestamp > prev_exit_timestamp:
                 trade_type = "Short" if data.iloc[i]['IsRedPinbar'] else "Long"
                 
@@ -160,14 +162,21 @@ while True:
                         data.iloc[i]['Low'] - entry_price)*earn_factor)
 
                 
-                if stop_loss_points < 5:
-                    stop_loss_points = 5
+                # if stop_loss_points < 5:
+                #     stop_loss_points = 5
                     
-                if stop_loss_points < 12 and take_profit_points > 45:
-                    take_profit_points = 24
-                    
-                if take_profit_points < 10 or stop_loss_points > 30 :
-                    continue
+                # if stop_loss_points < 12 and take_profit_points > 45:
+                #     take_profit_points = 24
+                
+                #Fixed it
+                if ticker == "^NSEBANK":
+                    stop_loss_points = 40
+                    if take_profit_points < 30:
+                        continue
+                else:
+                    stop_loss_points = 25
+                    if take_profit_points < 10:
+                        continue
 
                 stop_loss_price = entry_price + \
                     stop_loss_points if data.iloc[i]['IsRedPinbar'] else entry_price - \
@@ -179,39 +188,77 @@ while True:
                 trade_serial_number += 1
                 
                 next_index = 0
+                
                 for j in range(i + 1, len(data)):
                     next_row = data.iloc[j]
+                    trail_sl = False
+                    trail_tp = False
                     if trade_type == "Short":
                         if next_row['Low'] <= take_profit_price:
-                            exit_price = take_profit_price
-                            
-                            if next_row['Low'] < exit_price - 15:
-                                exit_price -= 15
+                            if take_profit_points < 40  or (take_profit_points >= 55 and take_profit_points < 90) :
+                                exit_price = take_profit_price - 10
+                                trail_tp = True
+                            else:
+                                exit_price = take_profit_price
+                                trail_tp = False
+
+                            # if ticker == "^NSEBANK":
+                            #     if take_profit_points < 35:
+                            #         exit_price -= 40
+                            #         trail_tp = True
+                            # else :
+                            #     if take_profit_points < 20:
+                            #         exit_price -= 20
+                            #         trail_tp = True
                             
                             next_index = j
                             break
                         elif next_row['High'] >= stop_loss_price:
                             exit_price = stop_loss_price
                             
-                            if next_row['High'] - exit_price > stop_loss_points:
-                                exit_price = entry_price  + stop_loss_points + 10
+                            # if ticker == "^NSEBANK":
+                            #      if stop_loss_points < 15:
+                            #         #exit_price = exit_price
+                            #         trail_sl = False
+                            # else :
+                            #     if  stop_loss_points < 15:
+                            #         exit_price += 10
+                            #         trail_sl = True
                                 
                             next_index = j
                             break
                     else:
                         if next_row['High'] >= take_profit_price:
-                            exit_price = take_profit_price
-                            
-                            if next_row['High'] >  exit_price + 15:
-                                exit_price += 15
+                            if take_profit_points < 40  or (take_profit_points >= 55 and take_profit_points < 70) :
+                                exit_price = take_profit_price + 10
+                                trail_tp = True
+                            else: 
+                                exit_price = take_profit_price
+                                trail_tp = False
+                           
+                            # if ticker == "^NSEBANK":
+                            #     if take_profit_points < 35:
+                            #         exit_price += 40
+                            #         trail_tp = True
+                            # else :
+                            #     if take_profit_points < 20:
+                            #         exit_price += 20
+                            #         trail_tp = True
                                 
                             next_index = j
                             break
                         elif next_row['Low'] <= stop_loss_price:
                             exit_price = stop_loss_price
                             
-                            if exit_price - next_row['Low'] > stop_loss_points:
-                                exit_price = entry_price - stop_loss_points - 10
+                            # if ticker == "^NSEBANK":
+                            #     if stop_loss_points < 15:
+                            #         #exit_price = exit_price
+                            #         trail_sl = False
+                            # else:
+                            #     if stop_loss_points < 15:
+                            #         exit_price -= 10
+                            #         trail_sl = True
+                                    
                                 
                             next_index = j
                             break
@@ -249,15 +296,22 @@ while True:
                     prev_entry_timestamp = entry_timestamp
                 else:
                     # print("No Profit No Loss")
-                    exit_timestamp = "N/A"
-                    exit_price = "N/A"
-                    entry_exit_difference = "N/A"
-                    profit = "N/A"
-                    final_profit_points = "N/A"
-                    trade_duration = "N/A"
-                    time_between_trades = "N/A"
+                    exit_timestamp = pd.Timedelta(0)
+                    exit_price = 0
+                    entry_exit_difference = 0
+                    profit = 0
+                    trade_duration = pd.Timedelta(0)
+                    time_between_trades = pd.Timedelta(0)
                     
                     
+                    
+                if ticker == "^NSEBANK":
+                    take_profit_str = f"{round(take_profit_points,2)}(+10)" if trail_tp else f"{round(take_profit_points,2)}(+0)"
+                    stop_loss_str = f"{round(stop_loss_points,2)}(+0)" if trail_sl else f"{round(stop_loss_points,2)}(+0)"
+                else:
+                    take_profit_str = f"{round(take_profit_points,2)}(+10)" if trail_tp else f"{round(take_profit_points,2)}(+0)"
+                    stop_loss_str = f"{round(stop_loss_points,2)}(+0)" if trail_sl else f"{round(stop_loss_points,2)}(+0)"
+                
                 trade_details.append([
                     trade_serial_number,
                     trade_type,
@@ -268,8 +322,8 @@ while True:
                     entry_exit_difference,
                     profit,
                     final_profit_points,
-                    take_profit_points,
-                    stop_loss_points,
+                    take_profit_str,
+                    stop_loss_str,
                     trade_duration,
                     time_between_trades
                 ])
@@ -300,7 +354,7 @@ while True:
 
     
     headers = ["Trade #", "Trade Type", "Entry Time", "Exit Time", "Entry Price", "Exit Price",
-               "Entry-Exit", "Profit", "Cum. Profit", "TP", "SL", "Active For", "Time Between Trades"]
+               "Entry-Exit", "Profit", "Cum. Profit", "TP(+Trail)", "SL(+Trail)", "Active For", "Time Between Trades"]
     with open("Trade_Details_" + ticker + ".txt", "w") as f:
         f.write(tabulate(trade_details, headers=headers, tablefmt="grid"))
     print(" ")
@@ -319,10 +373,9 @@ while True:
     print("\nTrade Overview Details: " + ticker)   
     summary_data = [
         ["Trade taken on Time Frame", f"{time_frame}"],
-        ["Maximum SL","30"],
-        ["Minimum TP","10"],
-        ["Max. SL Trail Offset","10"],
-        ["Max. TP Trail Offset","15"],
+        ["Fixed SL","40"],
+        ["Minimum TP","30"],
+        ["TP Trail Offset","20"],
         ["Total Trade Taken",
             f"{total_trade_taken} (Win:{num_winning_trades} Loss:{num_losing_trades})"],
         ["Cumm. Profit Points", f"{final_profit_points:.2f}"],
@@ -355,7 +408,7 @@ while True:
         now = datetime.now(latest_trade[2].tzinfo)
         time_ago = now - latest_trade[2]
         latest_trade_formatted = [latest_trade_headers, [latest_trade[0], latest_trade[1], latest_trade[2], latest_trade[3], round(
-            latest_trade[4], 2), round(latest_trade[5], 2), round(latest_trade[7], 2), round(latest_trade[9],2),round(latest_trade[10],2), str(time_ago)]]
+            latest_trade[4], 2), round(latest_trade[5], 2), round(latest_trade[7], 2), latest_trade[9], latest_trade[10], str(time_ago)]]
         print(tabulate(latest_trade_formatted, tablefmt="grid"))
 
 
