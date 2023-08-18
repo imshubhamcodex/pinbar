@@ -163,10 +163,10 @@ while True:
                 if stop_loss_points < 5:
                     stop_loss_points = 5
                     
-                if stop_loss_points < 12 and take_profit_points > 48:
+                if stop_loss_points < 12 and take_profit_points > 45:
                     take_profit_points = 24
                     
-                if take_profit_points < 10 or stop_loss_points >= 35 or take_profit_points > 80:
+                if take_profit_points < 10 or stop_loss_points > 30 :
                     continue
 
                 stop_loss_price = entry_price + \
@@ -184,19 +184,35 @@ while True:
                     if trade_type == "Short":
                         if next_row['Low'] <= take_profit_price:
                             exit_price = take_profit_price
+                            
+                            if next_row['Low'] < exit_price - 15:
+                                exit_price -= 15
+                            
                             next_index = j
                             break
                         elif next_row['High'] >= stop_loss_price:
                             exit_price = stop_loss_price
+                            
+                            if next_row['High'] - exit_price > stop_loss_points:
+                                exit_price = entry_price  + stop_loss_points + 10
+                                
                             next_index = j
                             break
                     else:
                         if next_row['High'] >= take_profit_price:
                             exit_price = take_profit_price
+                            
+                            if next_row['High'] >  exit_price + 15:
+                                exit_price += 15
+                                
                             next_index = j
                             break
                         elif next_row['Low'] <= stop_loss_price:
                             exit_price = stop_loss_price
+                            
+                            if exit_price - next_row['Low'] > stop_loss_points:
+                                exit_price = entry_price - stop_loss_points - 10
+                                
                             next_index = j
                             break
 
@@ -285,10 +301,10 @@ while True:
     
     headers = ["Trade #", "Trade Type", "Entry Time", "Exit Time", "Entry Price", "Exit Price",
                "Entry-Exit", "Profit", "Cum. Profit", "TP", "SL", "Active For", "Time Between Trades"]
-    with open("Trade_Details.txt", "w") as f:
+    with open("Trade_Details_" + ticker + ".txt", "w") as f:
         f.write(tabulate(trade_details, headers=headers, tablefmt="grid"))
     print(" ")
-    print("\nDetailed File Generated: Trade_Details.txt")
+    print("\nDetailed File Generated: "+ "Trade_Details_" + ticker + ".txt")
 
     
     if time_interval == "1h":
@@ -303,14 +319,14 @@ while True:
     print("\nTrade Overview Details: " + ticker)   
     summary_data = [
         ["Trade taken on Time Frame", f"{time_frame}"],
-        ["Maximum SL","35"],
+        ["Maximum SL","30"],
         ["Minimum TP","10"],
+        ["Max. SL Trail Offset","10"],
+        ["Max. TP Trail Offset","15"],
         ["Total Trade Taken",
             f"{total_trade_taken} (Win:{num_winning_trades} Loss:{num_losing_trades})"],
         ["Cumm. Profit Points", f"{final_profit_points:.2f}"],
         ["Win Percent:", win_percentage, "%"],
-        ["Profit Factor",
-            f"{round(take_profit_points / stop_loss_points, 2)}"],
         ["Active in Trade", f"{total_trade_duration}"],
         ["Time between Frist and Last Trade", f"{time_difference}"]
     ]
@@ -331,11 +347,6 @@ while True:
     plt.grid(True)
     plt.tight_layout()
 
-    if open_plot.lower() == 'y':
-        plt.show()
-    else:
-        plt.close()
-
     latest_trade = trade_details[-1] if trade_details else None
     if latest_trade:
         print("\nLatest Trade:")
@@ -349,5 +360,11 @@ while True:
 
 
         print("\nMade with ","\033[91m♥\033[0m", " : https://github.com/imshubhamcodex/")
+        
+    if open_plot.lower() == 'y':
+        plt.show()
+    else:
+        plt.close()
+        
     # Repeat After 5Min
     time.sleep(5 * 60)
