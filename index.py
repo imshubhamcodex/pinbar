@@ -23,7 +23,7 @@ while True:
         upper_shadow = high_price - max(open_price, close_price)
         lower_shadow = min(open_price, close_price) - low_price
 
-        if body / total_range < 0.2 and upper_shadow / total_range > 0.6 and lower_shadow / upper_shadow < 0.35 and trend_direction == 'downtrend' and total_range > 40:
+        if body / total_range < 0.3 and upper_shadow / total_range > 0.6 and lower_shadow / upper_shadow < 0.35 and trend_direction == 'downtrend' and total_range > 40:
             return True
         return False
 
@@ -33,7 +33,7 @@ while True:
         upper_shadow = high_price - max(open_price, close_price)
         lower_shadow = min(open_price, close_price) - low_price
 
-        if body / total_range < 0.2 and lower_shadow / total_range > 0.6 and upper_shadow / lower_shadow < 0.35 and trend_direction == 'uptrend' and total_range > 40:
+        if body / total_range < 0.3 and lower_shadow / total_range > 0.6 and upper_shadow / lower_shadow < 0.35 and trend_direction == 'uptrend' and total_range > 40:
             return True
         return False
 
@@ -119,8 +119,8 @@ while True:
                         data.iloc[i]['Low'] - entry_price)*earn_factor)
 
                 
-                if stop_loss_points < 10:
-                    stop_loss_points = 10
+                if stop_loss_points < 5:
+                    stop_loss_points = 5
                     
                 if stop_loss_points < 15 and take_profit_points > 40:
                     take_profit_points = 20
