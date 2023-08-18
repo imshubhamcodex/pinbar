@@ -1,4 +1,4 @@
-# pip install yfinance pandas matplotlib tabulate
+# pip install yfinance pandas matplotlib tabulate windows-curses
 import yfinance as yf
 import pandas as pd
 from datetime import datetime, timedelta
