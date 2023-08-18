@@ -8,14 +8,55 @@ import sys
 import msvcrt
 import time
 import os
+import curses
 
-# Fetch historical hourly data for Nifty 50 using yfinance
+ticker = ""  
+time_interval = "1h"
+
+
+import curses
+
+def main(stdscr, options, head):
+    curses.curs_set(0)
+    stdscr.clear()
+    
+    current_option = 0
+    
+    while True:
+        stdscr.clear()
+        stdscr.addstr(0, 0, head)
+        for i, option in enumerate(options):
+            if i == current_option:
+                stdscr.addstr(i + 1, 0, "-> " + option, curses.A_REVERSE)
+            else:
+                stdscr.addstr(i + 1, 0, "   " + option)
+        stdscr.refresh()
+        
+        key = stdscr.getch()
+        
+        if key == curses.KEY_DOWN and current_option < len(options) - 1:
+            current_option += 1
+        elif key == curses.KEY_UP and current_option > 0:
+            current_option -= 1
+        elif key == 10:  # Enter key
+            return options[current_option]
+        
+        curses.flushinp()
+
+if __name__ == "__main__":
+    
+    menu_options = ["^NSEI", "^NSEBANK"]
+    
+    selected_option = curses.wrapper(main, menu_options, "Choose Trading Asset")
+    if selected_option is not None:
+        ticker = selected_option
+
+    
 while True:
-    ticker = "^NSEI"
     end_date = datetime.today().date()
     start_date = end_date - timedelta(days=720)
 
-    data = yf.download(ticker, start=start_date, end=end_date, interval="1h")
+    data = yf.download(ticker, start=start_date, end=end_date, interval=time_interval)
 
     def is_red_pinbar(open_price, high_price, low_price, close_price, trend_direction):
         total_range = high_price - low_price
@@ -74,7 +115,7 @@ while True:
     #     "Enter Stop Loss Points", 20, 10))
     # take_profit_points = float(get_input_with_timeout(
     #     "Enter Take Profit Points", 90, 10))
-    open_plot = get_input_with_timeout("Open plot (y/n)", "n", 10)
+    open_plot = get_input_with_timeout("Open P/L plot (y/n)", "n", 5)
 
     initial_profit_points = 0
     final_profit_points = initial_profit_points
@@ -224,6 +265,7 @@ while True:
     # print(f"Initial Profit Points: {initial_profit_points:.2f}, Final Profit Points: {final_profit_points:.2f}")
     # print(f"Loss Drawdown: {total_consecutive_loss:.2f}")
     # print(f"Profit Overshoot: {max_profit_points:.2f}")
+    
 
     first_trade_time = trade_details[0][2]
     last_trade_time = trade_details[-1][3]
@@ -245,10 +287,20 @@ while True:
                "Entry-Exit", "Profit", "Cum. Profit", "TP", "SL", "Active For", "Time Between Trades"]
     with open("Trade_Details.txt", "w") as f:
         f.write(tabulate(trade_details, headers=headers, tablefmt="grid"))
+    print(" ")
     print("\nDetailed File Generated: Trade_Details.txt")
 
-    print("\nTrade Overview Details:")
-    time_frame = "1Hr"
+    
+    if time_interval == "1h":
+        time_frame = "1Hr"
+    elif time_interval == "15m":
+        time_frame = "15 Min."
+    elif time_interval == "5m":
+        time_frame = "5 Min."
+    else:
+        time_frame = time_interval
+        
+    print("\nTrade Overview Details: " + ticker)   
     summary_data = [
         ["Trade taken on Time Frame", f"{time_frame}"],
         ["Maximum SL","35"],
