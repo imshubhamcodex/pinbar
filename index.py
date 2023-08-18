@@ -122,8 +122,8 @@ while True:
                 if stop_loss_points < 5:
                     stop_loss_points = 5
                     
-                if stop_loss_points < 15 and take_profit_points > 40:
-                    take_profit_points = 20
+                if stop_loss_points < 12 and take_profit_points > 48:
+                    take_profit_points = 24
                     
                 if take_profit_points < 10 or stop_loss_points >= 35 or take_profit_points > 80:
                     continue
@@ -264,9 +264,6 @@ while True:
     ]
     print(tabulate(summary_data, headers=["Metric", "Value"], tablefmt="grid"))
 
-    print("Made by imshubhamcodex.")
-    
-    
     
     # Plotting code
     plt.figure(figsize=(12, 8))
@@ -298,5 +295,7 @@ while True:
             latest_trade[4], 2), round(latest_trade[5], 2), round(latest_trade[7], 2), round(latest_trade[8], 2), str(time_ago)]]
         print(tabulate(latest_trade_formatted, tablefmt="grid"))
 
+
+        print("\nMade with ","\033[91m♥\033[0m", " : https://github.com/imshubhamcodex/")
     # Repeat After 5Min
     time.sleep(5 * 60)
