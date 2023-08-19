@@ -6,11 +6,11 @@ import matplotlib.pyplot as plt
 from tabulate import tabulate
 import sys
 import msvcrt
-import time
 import os
 import curses
 import requests
-import json
+import time
+from datetime import datetime, time as datetime_time
 
 ticker = ""  
 time_interval = "1h"
@@ -234,9 +234,9 @@ def simulate_trade(data):
                     exit_timestamp,
                     round(entry_price,2),
                     round(exit_price,2),
-                    entry_exit_difference,
-                    profit,
-                    final_profit_points,
+                    round(entry_exit_difference,2),
+                    round(profit,2),
+                    round(final_profit_points,2),
                     take_profit_str,
                     stop_loss_str,
                     trade_duration,
@@ -300,7 +300,7 @@ def print_todays_trade(trades):
         
         if str(latest_trade[3]) != "NaT":
             headers = ["Trade #", "Trade Type", "Entry Time", "Exit Time", "Entry Price", "Exit Price", "Profit", "TP(+Trail)", "SL(+Trail)", "Active For"]
-            headers_formatted = [headers, [latest_trade[0], latest_trade[1], latest_trade[2], latest_trade[3],latest_trade[4], latest_trade[5], latest_trade[7], latest_trade[8],latest_trade[9], latest_trade[10]]]
+            headers_formatted = [headers, [latest_trade[0], latest_trade[1], latest_trade[2], latest_trade[3],latest_trade[4], latest_trade[5], latest_trade[7], latest_trade[9],latest_trade[10], latest_trade[11]]]
             print(tabulate(headers_formatted, tablefmt="grid"))
             print(" ")
         
@@ -352,10 +352,22 @@ def adjust_data():
     start_timestamp = date_to_timestamp(today)
     end_timestamp = date_to_timestamp(tomorrow)
         
-    money_control_url = "https://priceapi.moneycontrol.com//techCharts/indianMarket/index/history?symbol=in%3Bnbx&resolution=15&from=" + str(start_timestamp) + "&to=" + str(end_timestamp) + "&countback=234&currencyCode=INR"
+    money_control_url = "https://priceapi.moneycontrol.com//techCharts/indianMarket/index/history?symbol=in%3Bnbx&resolution=15&from=" + str(start_timestamp) + "&to=" + str(end_timestamp) + "&countback=100&currencyCode=INR"
     headers = {
-        "Cookie": "MC_PPID_LOGIC=normaluser6667461145079466mcids; _gcl_au=1.1.257365712.1692387851; _gid=GA1.2.713682474.1692387853; _cb=Com7GORN8-NZSBMe; WZRK_G=1c78bf5e96fd496295f57ea236ce2122; _cc_id=ffe51bfcbbbb6514f53a347582d6e56e; panoramaId_expiry=1692474289980; _hjSessionUser_3470143=eyJpZCI6IjlhNTJjNjQ3LTdhOTQtNWE2My1iN2RiLTU0YWUyNzkyNjBiMyIsImNyZWF0ZWQiOjE2OTIzODc4NjA5NjksImV4aXN0aW5nIjp0cnVlfQ==; PHPSESSID=8i2fj7mcped3pvem5a2kehro06; __utma=129839248.2034491628.1692387853.1692392018.1692392018.1; __utmc=129839248; __utmz=129839248.1692392018.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); _ga_4S48PBY299=GS1.1.1692425530.3.0.1692425530.0.0.0; _ga=GA1.1.2034491628.1692387853; _chartbeat2=.1692387855383.1692425531727.1.CIZ_WG0dRpHCGUi9RgQfDABM84-L.1; _cb_svref=https%3A%2F%2Fwww.google.com%2F; _hjIncludedInSessionSample_3470143=0; _hjSession_3470143=eyJpZCI6ImEyNzJmNTFkLWUxODEtNDk3Ni1iZTQwLWUzMDVmMjFmNGEzZSIsImNyZWF0ZWQiOjE2OTI0MjU1MzI4NTAsImluU2FtcGxlIjpmYWxzZX0=; FCNEC=%5B%5B%22AKsRol8q-cLq2qkwwnTjdahbNbG5lKKtkco-TtklgxqY5Q608OQQiKWqSI5tPHJtdlEF-_sgGGLGRzQhFt7q-iUvzAE5G8kNOQAssSMO4DXdOc4mH1teCThoFmX2IUUkOn3Mp62LG6NXwn7bSevOvu45G5wcigSAZA%3D%3D%22%5D%2Cnull%2C%5B%5D%5D; _ga_1ERSHJWQZ9=GS1.1.1692425551.3.0.1692425551.0.0.0; WZRK_S_86Z-5ZR-RK6Z=%7B%22p%22%3A1%2C%22s%22%3A1692425534%2C%22t%22%3A1692425652%7D; __gads=ID=d320eb17fa7180a8-22c2dcfcede20002:T=1692387887:RT=1692425854:S=ALNI_MbgMED0m7OrgGvRnIvmsChkneORYg; __gpi=UID=00000c2eec922b16:T=1692387887:RT=1692425854:S=ALNI_MaLpAs4dMry-7NDzplBLvdw-lhRqw",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Cache-Control": "max-age=0",
+        "Sec-Ch-Ua": "\"Not/A)Brand\";v=\"99\", \"Microsoft Edge\";v=\"115\", \"Chromium\";v=\"115\"",
+        "Sec-Ch-Ua-Mobile": "?0",
+        "Sec-Ch-Ua-Platform": "\"Windows\"",
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-User": "?1",
+        "Upgrade-Insecure-Requests": "1",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36 Edg/115.0.1901.203",
+        "Referer": "https://priceapi.moneycontrol.com//techCharts/indianMarket/index/history?symbol=in%3Bnbx&resolution=15&from=" + str(start_timestamp) + "&to=" + str(end_timestamp) + "&countback=100&currencyCode=INR"
     }
 
     response = requests.get(money_control_url,headers=headers)
@@ -384,8 +396,10 @@ def adjust_data():
     data_df = pd.DataFrame(other_data_df)
     data_df['Date'] = pd.to_datetime(data_df['Date'])
 
-    #today_date = (datetime.now() - timedelta(days=1)).date() # TESTING ON 1 DAY BACK
-    today_date = datetime.now().date()
+    # today_date = (datetime.now() - timedelta(days=2)).date()    #  TESTING ON 2 DAY BACK
+    # today_date = (datetime.now() - timedelta(days=1)).date()  #  TESTING ON 1 DAY BACK
+    today_date = datetime.now().date()                        #  Live
+    
     todays_data = data_adjusted_to_one_hr(data_df, today_date)
     return todays_data
 
@@ -397,10 +411,22 @@ def fetch_todays_data():
     start_timestamp = date_to_timestamp(today)
     end_timestamp = date_to_timestamp(tomorrow)
         
-    money_control_url = "https://priceapi.moneycontrol.com//techCharts/indianMarket/index/history?symbol=in%3Bnbx&resolution=60&from=" + str(start_timestamp) + "&to=" + str(end_timestamp) + "&countback=234&currencyCode=INR"
+    money_control_url = "https://priceapi.moneycontrol.com//techCharts/indianMarket/index/history?symbol=in%3Bnbx&resolution=60&from=" + str(start_timestamp) + "&to=" + str(end_timestamp) + "&countback=24&currencyCode=INR"
     headers = {
-        "Cookie": "MC_PPID_LOGIC=normaluser6667461145079466mcids; _gcl_au=1.1.257365712.1692387851; _gid=GA1.2.713682474.1692387853; _cb=Com7GORN8-NZSBMe; WZRK_G=1c78bf5e96fd496295f57ea236ce2122; _cc_id=ffe51bfcbbbb6514f53a347582d6e56e; panoramaId_expiry=1692474289980; _hjSessionUser_3470143=eyJpZCI6IjlhNTJjNjQ3LTdhOTQtNWE2My1iN2RiLTU0YWUyNzkyNjBiMyIsImNyZWF0ZWQiOjE2OTIzODc4NjA5NjksImV4aXN0aW5nIjp0cnVlfQ==; PHPSESSID=8i2fj7mcped3pvem5a2kehro06; __utma=129839248.2034491628.1692387853.1692392018.1692392018.1; __utmc=129839248; __utmz=129839248.1692392018.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); _ga_4S48PBY299=GS1.1.1692425530.3.0.1692425530.0.0.0; _ga=GA1.1.2034491628.1692387853; _chartbeat2=.1692387855383.1692425531727.1.CIZ_WG0dRpHCGUi9RgQfDABM84-L.1; _cb_svref=https%3A%2F%2Fwww.google.com%2F; _hjIncludedInSessionSample_3470143=0; _hjSession_3470143=eyJpZCI6ImEyNzJmNTFkLWUxODEtNDk3Ni1iZTQwLWUzMDVmMjFmNGEzZSIsImNyZWF0ZWQiOjE2OTI0MjU1MzI4NTAsImluU2FtcGxlIjpmYWxzZX0=; FCNEC=%5B%5B%22AKsRol8q-cLq2qkwwnTjdahbNbG5lKKtkco-TtklgxqY5Q608OQQiKWqSI5tPHJtdlEF-_sgGGLGRzQhFt7q-iUvzAE5G8kNOQAssSMO4DXdOc4mH1teCThoFmX2IUUkOn3Mp62LG6NXwn7bSevOvu45G5wcigSAZA%3D%3D%22%5D%2Cnull%2C%5B%5D%5D; _ga_1ERSHJWQZ9=GS1.1.1692425551.3.0.1692425551.0.0.0; WZRK_S_86Z-5ZR-RK6Z=%7B%22p%22%3A1%2C%22s%22%3A1692425534%2C%22t%22%3A1692425652%7D; __gads=ID=d320eb17fa7180a8-22c2dcfcede20002:T=1692387887:RT=1692425854:S=ALNI_MbgMED0m7OrgGvRnIvmsChkneORYg; __gpi=UID=00000c2eec922b16:T=1692387887:RT=1692425854:S=ALNI_MaLpAs4dMry-7NDzplBLvdw-lhRqw",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Cache-Control": "max-age=0",
+        "Sec-Ch-Ua": "\"Not/A)Brand\";v=\"99\", \"Microsoft Edge\";v=\"115\", \"Chromium\";v=\"115\"",
+        "Sec-Ch-Ua-Mobile": "?0",
+        "Sec-Ch-Ua-Platform": "\"Windows\"",
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-User": "?1",
+        "Upgrade-Insecure-Requests": "1",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36 Edg/115.0.1901.203",
+        "Referer": "https://priceapi.moneycontrol.com//techCharts/indianMarket/index/history?symbol=in%3Bnbx&resolution=60&from=" + str(start_timestamp) + "&to=" + str(end_timestamp) + "&countback=24&currencyCode=INR"
     }
 
     response = requests.get(money_control_url,headers=headers)
@@ -436,8 +462,9 @@ def fetch_todays_data():
         data_df = pd.DataFrame(other_data_df)
         data_df['Date'] = pd.to_datetime(data_df['Date'])
         
-        #today_date = (datetime.now() - timedelta(days=1)).date() # TESTING ON 1 DAY BACK
-        today_date = datetime.now().date()
+        # today_date = (datetime.now() - timedelta(days=2)).date()    #  TESTING ON 2 DAY BACK
+        # today_date = (datetime.now() - timedelta(days=1)).date()  #  TESTING ON 1 DAY BACK
+        today_date = datetime.now().date()                        #  Live
         
         filtered_day_data = data_df[data_df['Date'].dt.date == today_date]
         filtered_day_data.set_index('Date', inplace=True)
@@ -447,17 +474,6 @@ def fetch_todays_data():
 
 
 def fetch_todays_trade(data):
-   
-    #TESTING BY ADDING NEW DATA
-    # new_rows_data1 = {'Open': 43810.148438, 'High': 43847.601562, 'Low': 43731.000000, 'Close': 43824.851562, 'Volume': 0}
-    # # new_rows_data2 = {'Open': 43823.300781, 'High': 43934.699219, 'Low': 43810.750000, 'Close': 43913.449219, 'Volume': 0}
-    
-    # rows_to_replace1 = '2023-08-18 15:15:00'
-    # # rows_to_replace2 = '2023-08-18 14:15:00'
-
-    # data.loc[rows_to_replace1] = new_rows_data1
-    # # data.loc[rows_to_replace2] = new_rows_data2
-    
     data['Direction'] = data['Close'].diff().apply(lambda x: 'uptrend' if x > 0 else 'downtrend')
     data['IsRedPinbar'] = data.apply(lambda row: is_red_pinbar(row['Open'], row['High'], row['Low'], row['Close'], row['Direction']), axis=1)
     data['IsGreenPinbar'] = data.apply(lambda row: is_green_pinbar(row['Open'], row['High'], row['Low'], row['Close'], row['Direction']), axis=1)
@@ -478,6 +494,23 @@ def fetch_todays_trade(data):
     print(" ")
     return trade_details
 
+
+
+def plot_chart(profit_points, loss_drawdown, profit_overshoot, traded_timestamp, open_plot):
+    plt.figure(figsize=(12, 8))
+    plt.plot(range(len(profit_points)), profit_points, label='Profit Points')
+    plt.plot(range(len(loss_drawdown)), loss_drawdown, label='Loss Drawdown')
+    plt.plot(range(len(profit_overshoot)),
+             profit_overshoot, label='Profit Overshoot')
+    plt.xlabel('Trade')
+    plt.ylabel('Points')
+    plt.title('Trade Metrics')
+    plt.legend()
+    plt.xticks(range(len(traded_timestamp)), traded_timestamp, rotation=90, fontsize=8)
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+    print("\nMade with ","\033[91m♥\033[0m", " : https://github.com/imshubhamcodex/")
 
 
 
@@ -549,39 +582,26 @@ def execution():
     else:   
         print("\nMade with ","\033[91m♥\033[0m", " : https://github.com/imshubhamcodex/")
 
+# Run Once
+execution()
 
 
-def plot_chart(profit_points, loss_drawdown, profit_overshoot, traded_timestamp, open_plot):
-    plt.figure(figsize=(12, 8))
-    plt.plot(range(len(profit_points)), profit_points, label='Profit Points')
-    plt.plot(range(len(loss_drawdown)), loss_drawdown, label='Loss Drawdown')
-    plt.plot(range(len(profit_overshoot)),
-             profit_overshoot, label='Profit Overshoot')
-    plt.xlabel('Trade')
-    plt.ylabel('Points')
-    plt.title('Trade Metrics')
-    plt.legend()
-    plt.xticks(range(len(traded_timestamp)), traded_timestamp, rotation=90, fontsize=8)
-    plt.grid(True)
-    plt.tight_layout()
-    plt.show()
-    print("\nMade with ","\033[91m♥\033[0m", " : https://github.com/imshubhamcodex/")
-
-
-
-# Runner
+# Looper
 def check_and_call_function():
     current_time = datetime.now().time()
     
     for hour in range(9, 16):  # From 9 AM to 3 PM
-        start_time = time(hour, 15)
-        end_time = time(hour, 20)
+        start_time = datetime_time(hour, 15)
+        end_time = datetime_time(hour, 20)
         
         if start_time <= current_time <= end_time:
             execution()
+            print("Executed at " + str(current_time))
             break
 
-# while True:
-#     check_and_call_function()
-#     time.sleep(90) 90sec
-execution()
+while True:
+    check_and_call_function()
+    print(" ")
+    
+    time.sleep(90)  # 90-second wait
+
