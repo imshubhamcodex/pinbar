@@ -448,15 +448,15 @@ def fetch_todays_data():
 
 def fetch_todays_trade(data):
    
-    #TESTING BY ADDIND NEW DATA
+    #TESTING BY ADDING NEW DATA
     # new_rows_data1 = {'Open': 43810.148438, 'High': 43847.601562, 'Low': 43731.000000, 'Close': 43824.851562, 'Volume': 0}
-    # new_rows_data2 = {'Open': 43823.300781, 'High': 43934.699219, 'Low': 43810.750000, 'Close': 43913.449219, 'Volume': 0}
+    # # new_rows_data2 = {'Open': 43823.300781, 'High': 43934.699219, 'Low': 43810.750000, 'Close': 43913.449219, 'Volume': 0}
     
     # rows_to_replace1 = '2023-08-18 15:15:00'
-    # rows_to_replace2 = '2023-08-18 14:15:00'
+    # # rows_to_replace2 = '2023-08-18 14:15:00'
 
     # data.loc[rows_to_replace1] = new_rows_data1
-    # data.loc[rows_to_replace2] = new_rows_data2
+    # # data.loc[rows_to_replace2] = new_rows_data2
     
     data['Direction'] = data['Close'].diff().apply(lambda x: 'uptrend' if x > 0 else 'downtrend')
     data['IsRedPinbar'] = data.apply(lambda row: is_red_pinbar(row['Open'], row['High'], row['Low'], row['Close'], row['Direction']), axis=1)
@@ -524,9 +524,6 @@ def execution():
     ]
     print(tabulate(summary_data, headers=["Metric", "Value"], tablefmt="grid"))
 
-
-
-
     todays_data, data_ajusted = fetch_todays_data()
     print(" ")
     if data_ajusted:
@@ -536,7 +533,9 @@ def execution():
     
     if todays_data.empty:
         print(" ")
-        print("NO Data Avaliable", todays_data)
+        print("NO DATA [DATE OR TIME NOK]", todays_data)
+        if open_plot.lower() == 'y':
+             plot_chart(profit_points, loss_drawdown, profit_overshoot, traded_timestamp, open_plot)
         return
     
     todays_data['Datetime'] = pd.to_datetime(todays_data['Datetime'])
@@ -545,8 +544,14 @@ def execution():
     latest_trade = fetch_todays_trade(todays_data)
     print_todays_trade(latest_trade)
     
-    
-    # Plotting code
+    if open_plot.lower() == 'y':
+        plot_chart(profit_points, loss_drawdown, profit_overshoot, traded_timestamp, open_plot)
+    else:   
+        print("\nMade with ","\033[91m♥\033[0m", " : https://github.com/imshubhamcodex/")
+
+
+
+def plot_chart(profit_points, loss_drawdown, profit_overshoot, traded_timestamp, open_plot):
     plt.figure(figsize=(12, 8))
     plt.plot(range(len(profit_points)), profit_points, label='Profit Points')
     plt.plot(range(len(loss_drawdown)), loss_drawdown, label='Loss Drawdown')
@@ -559,14 +564,8 @@ def execution():
     plt.xticks(range(len(traded_timestamp)), traded_timestamp, rotation=90, fontsize=8)
     plt.grid(True)
     plt.tight_layout()
-
+    plt.show()
     print("\nMade with ","\033[91m♥\033[0m", " : https://github.com/imshubhamcodex/")
-    
-        
-    if open_plot.lower() == 'y':
-        plt.show()
-    else:
-        plt.close()
 
 
 
@@ -575,7 +574,7 @@ def check_and_call_function():
     current_time = datetime.now().time()
     
     for hour in range(9, 16):  # From 9 AM to 3 PM
-        start_time = time(hour, 13)
+        start_time = time(hour, 15)
         end_time = time(hour, 20)
         
         if start_time <= current_time <= end_time:
@@ -584,5 +583,5 @@ def check_and_call_function():
 
 # while True:
 #     check_and_call_function()
-#     time.sleep(60)
+#     time.sleep(90) 90sec
 execution()
