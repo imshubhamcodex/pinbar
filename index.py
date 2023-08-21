@@ -612,10 +612,13 @@ def check_and_call_function():
         start_timei = datetime_time(hour, 14)
         end_timei = datetime_time(hour, 20)
         
-        start_timej = datetime_time(hour, 55)
-        end_timej = datetime_time(hour, 5)
+        start_timej = datetime_time(hour, 58)
+        end_timej = datetime_time(hour, 4)
+        
+        start_timek = datetime_time(hour, 29)
+        end_timek = datetime_time(hour, 34)
                 
-        if start_timei <= current_time <= end_timei or start_timej <= current_time <= end_timej:
+        if start_timei <= current_time <= end_timei or start_timej <= current_time <= end_timej or start_timek <= current_time <= end_timek:
             execution()
             print("Re-Run at " + str(current_time))
             break
