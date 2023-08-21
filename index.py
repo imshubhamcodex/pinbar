@@ -126,10 +126,11 @@ def simulate_trade(data):
         if data.iloc[i]['IsRedPinbar'] or data.iloc[i]['IsGreenPinbar']:
             entry_price = data.iloc[i]['Close']
             entry_timestamp = data.index[i]
+            # print(entry_timestamp , prev_exit_timestamp) # TEST FOR TIME
             
-            if prev_exit_timestamp is None or entry_timestamp > prev_exit_timestamp:
+            if prev_exit_timestamp is None or entry_timestamp >= prev_exit_timestamp:
                 trade_type = "Short" if data.iloc[i]['IsRedPinbar'] else "Long"
-        
+                
                 exit_price = 0
                 inv_loss_factor = 1.8
                 earn_factor = 0.4
@@ -224,7 +225,7 @@ def simulate_trade(data):
                     trade_duration = pd.NaT
                     time_between_trades = pd.NaT
                     
-                    
+                
                 take_profit_str = f"{round(take_profit_points,2)}(+10)" if trail_tp else f"{round(take_profit_points,2)}(+0)"
                 stop_loss_str = f"{round(stop_loss_points,2)}(+0)" if trail_sl else f"{round(stop_loss_points,2)}(+0)"
                 trade_details.append([
@@ -474,6 +475,16 @@ def fetch_todays_data():
 
 
 def fetch_todays_trade(data):
+    #TESTING BY ADDING NEW DATA
+    # new_rows_data1 = {'Open': 43810.148438, 'High': 43847.601562, 'Low': 43731.000000, 'Close': 43824.851562, 'Volume': 0}
+    # # new_rows_data2 = {'Open': 43823.300781, 'High': 43934.699219, 'Low': 43810.750000, 'Close': 43913.449219, 'Volume': 0}
+
+    # rows_to_replace1 = '2023-08-21 10:30:00'
+    # # rows_to_replace2 = '2023-08-18 14:15:00'
+
+    # data.loc[rows_to_replace1] = new_rows_data1
+    # # data.loc[rows_to_replace2] = new_rows_data2
+    
     data['Direction'] = data['Close'].diff().apply(lambda x: 'uptrend' if x > 0 else 'downtrend')
     data['IsRedPinbar'] = data.apply(lambda row: is_red_pinbar(row['Open'], row['High'], row['Low'], row['Close'], row['Direction']), axis=1)
     data['IsGreenPinbar'] = data.apply(lambda row: is_green_pinbar(row['Open'], row['High'], row['Low'], row['Close'], row['Direction']), axis=1)
@@ -580,12 +591,15 @@ def execution():
     
     latest_trade = fetch_todays_trade(todays_data)
     print_todays_trade(latest_trade)
+    print_txt("Trade_Live_"+ ticker + " " + str(datetime.now().date()) , latest_trade)
     
     if open_plot.lower() == 'y':
         plot_chart(profit_points, loss_drawdown, profit_overshoot, traded_timestamp, open_plot)
     else:   
         print("\nMade with ","\033[91m♥\033[0m", " : https://github.com/imshubhamcodex/")
-
+    
+    print(" ")
+    
 # Run Once
 execution()
 
@@ -595,17 +609,18 @@ def check_and_call_function():
     current_time = datetime.now().time()
     
     for hour in range(9, 16):  # From 9 AM to 3 PM
-        start_time = datetime_time(hour, 14)
-        end_time = datetime_time(hour, 20)
+        start_timei = datetime_time(hour, 14)
+        end_timei = datetime_time(hour, 20)
         
-        if start_time <= current_time <= end_time:
+        start_timej = datetime_time(hour, 55)
+        end_timej = datetime_time(hour, 5)
+                
+        if start_timei <= current_time <= end_timei or start_timej <= current_time <= end_timej:
             execution()
-            print("Executed at " + str(current_time))
+            print("Re-Run at " + str(current_time))
             break
 
 while True:
     check_and_call_function()
-    print(" ")
-    
     time.sleep(90)  # 90-second wait
 
