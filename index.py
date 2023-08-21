@@ -11,6 +11,7 @@ import curses
 import requests
 import time
 from datetime import datetime, time as datetime_time
+import json
 
 ticker = ""  
 time_interval = "1h"
@@ -128,7 +129,7 @@ def simulate_trade(data):
             entry_timestamp = data.index[i]
             # print(entry_timestamp , prev_exit_timestamp) # TEST FOR TIME
             
-            if prev_exit_timestamp is None or entry_timestamp >= prev_exit_timestamp:
+            if prev_exit_timestamp is None or entry_timestamp > prev_exit_timestamp:
                 trade_type = "Short" if data.iloc[i]['IsRedPinbar'] else "Long"
                 
                 exit_price = 0
@@ -145,7 +146,6 @@ def simulate_trade(data):
                         entry_price - data.iloc[i]['High'])/inv_loss_factor)
                     take_profit_points = abs((
                         data.iloc[i]['Low'] - entry_price)*earn_factor)
-                
                 
                 if ticker == "^NSEBANK":
                     stop_loss_points = 40      #Fixed it
@@ -405,8 +405,95 @@ def adjust_data():
     return todays_data
 
 
+def fetch_todays_data_from_ET():
+    headers = {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Cache-Control": "max-age=0",
+        "Sec-Ch-Ua": "\"Not/A)Brand\";v=\"99\", \"Microsoft Edge\";v=\"115\", \"Chromium\";v=\"115\"",
+        "Sec-Ch-Ua-Mobile": "?0",
+        "Sec-Ch-Ua-Platform": "\"Windows\"",
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-User": "?1",
+        "Upgrade-Insecure-Requests": "1",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36 Edg/115.0.1901.203",
+        "Referer": "https://ettechcharts.indiatimes.com/ETLiveFeedChartRead/livefeeddata?scripcode=BANKNIFTY&exchangeid=50&datatype=intraday&filtertype=15MIN&tagId=&firstreceivedataid=&lastreceivedataid=&directions=all&callback=serviceHit.chartResultCallback&scripcodetype=index"
+    }
+    url = ("https://ettechcharts.indiatimes.com/ETLiveFeedChartRead/livefeeddata?scripcode=BANKNIFTY&exchangeid=50&datatype=intraday&filtertype=15MIN&tagId=&firstreceivedataid=&lastreceivedataid=&directions=all&callback=serviceHit.chartResultCallback&scripcodetype=index")
+    
+    res = res = requests.get(url,headers=headers)
+    response_text = res.text
+    start_index = response_text.find("(") + 1
+    end_index = response_text.rfind(")")
+    json_data = response_text[start_index:end_index]
+        
+    data = json.loads(json_data)
+    quote_data = data['query']['results']['quote']
+    df = pd.DataFrame(quote_data)
+    df['Date'] = pd.to_datetime(df['Date'])
+    df.set_index('Date', inplace=True)
 
-def fetch_todays_data():
+    current_date = pd.Timestamp.today()
+    todays_data = df[df.index.date == current_date.date()]
+    
+    print("Fetched Sequence: " , len(todays_data))
+    
+    df = todays_data
+
+    time_frames = [
+        ('09:15:00', '10:00:00'),
+        ('10:15:00', '11:00:00'),
+        ('11:15:00', '12:00:00'),
+        ('12:15:00', '13:00:00'),
+        ('13:15:00', '14:00:00'),
+        ('14:15:00', '15:00:00'),
+        ('15:15:00', '15:30:00')
+    ]
+
+    results = []
+
+    for time_frame_start, time_frame_end in time_frames:
+        group_df = df.between_time(time_frame_start, time_frame_end)
+
+        if len(group_df) == 4:
+            high = group_df['High'].max()
+            low = group_df['Low'].min()
+            close = group_df.iloc[0]['Close']
+            open_value = group_df.iloc[-1]['Open']
+            
+            results.append({
+                'Time Frame': f'{time_frame_start} to {time_frame_end}',
+                'High': high,
+                'Low': low,
+                'Open': open_value,
+                'Close': close
+            })
+        
+    result_df = pd.DataFrame(results)
+    current_date = datetime.now().date()
+    
+    if not result_df.empty:
+        result_df['Time Frame'] = result_df['Time Frame'].str.split(' to ').apply(lambda x: x[0])
+        result_df['Time Frame'] = pd.to_datetime(result_df['Time Frame'], format='%H:%M:%S').apply(lambda x: x.replace(year=current_date.year, month=current_date.month, day=current_date.day))
+
+        result_df.rename(columns={'Time Frame': 'Date'}, inplace=True)
+        result_df.set_index('Date', inplace=True)
+
+        data_df = pd.DataFrame(result_df)
+        data_df['Date'] = pd.to_datetime(data_df.index)
+        data_df.drop(columns=['Date'], inplace=True)
+        todays_data = data_df.rename_axis('Datetime').reset_index()
+        return todays_data
+    
+    return result_df
+
+
+def fetch_data_from_MC():
+    data_ajusted = False
+    
     today = datetime.now().date()
     tomorrow = today + timedelta(days=1)
     start_timestamp = date_to_timestamp(today)
@@ -431,14 +518,8 @@ def fetch_todays_data():
     }
 
     response = requests.get(money_control_url,headers=headers)
-    
-    try:
-        response_data = response.json()
-    except Exception as e:
-        print("JSON Decode Error:", e)
-        return None
-    
-    data_ajusted = False
+    response_data = response.json()
+
     
     if response_data['s'] == "no_data" :
         data_ajusted = True
@@ -468,10 +549,34 @@ def fetch_todays_data():
         today_date = datetime.now().date()                        #  Live
         filtered_day_data = data_df[data_df['Date'].dt.date == today_date]
         filtered_day_data.set_index('Date', inplace=True)
-        todays_data = filtered_day_data.rename_axis('Datetime').reset_index() 
+        todays_data = filtered_day_data.rename_axis('Datetime').reset_index()
+        
+        print(" ")
+        print("Live Data Fetching From MC...")
+        print(" ")
         
         return todays_data, data_ajusted
 
+
+
+def fetch_todays_data(where_to_fetch):
+    enable_ET_fetch = False
+    data_ajusted = False
+    
+    if where_to_fetch == "y":
+        enable_ET_fetch = True
+        
+    if(enable_ET_fetch):
+        print(" ")
+        print("Live Data Fetching From ET...")
+        print(" ")
+        todays_data = fetch_todays_data_from_ET()
+        return todays_data, data_ajusted
+    else:
+        todays_data, data_ajusted = fetch_data_from_MC()
+        return todays_data, data_ajusted
+    
+    
 
 
 def fetch_todays_trade(data):
@@ -479,11 +584,14 @@ def fetch_todays_trade(data):
     # new_rows_data1 = {'Open': 43810.148438, 'High': 43847.601562, 'Low': 43731.000000, 'Close': 43824.851562, 'Volume': 0}
     # # new_rows_data2 = {'Open': 43823.300781, 'High': 43934.699219, 'Low': 43810.750000, 'Close': 43913.449219, 'Volume': 0}
 
-    # rows_to_replace1 = '2023-08-21 10:30:00'
+    # rows_to_replace1 = '2023-08-21 10:15:00'
     # # rows_to_replace2 = '2023-08-18 14:15:00'
 
     # data.loc[rows_to_replace1] = new_rows_data1
     # # data.loc[rows_to_replace2] = new_rows_data2
+    
+    numeric_columns = ['Open', 'High', 'Low', 'Close']
+    data[numeric_columns] = data[numeric_columns].apply(pd.to_numeric, errors='coerce')
     
     data['Direction'] = data['Close'].diff().apply(lambda x: 'uptrend' if x > 0 else 'downtrend')
     data['IsRedPinbar'] = data.apply(lambda row: is_red_pinbar(row['Open'], row['High'], row['Low'], row['Close'], row['Direction']), axis=1)
@@ -493,6 +601,8 @@ def fetch_todays_trade(data):
     data['Body'] = abs(data['Open'] - data['Close'])
     data['Upper Shadow'] = data['High'] - data[['Open', 'Close']].max(axis=1)
     data['Lower Shadow'] = data[['Open', 'Close']].min(axis=1) - data['Low']
+    
+    print(data)
     
     trade_details, profit_points, loss_drawdown, profit_overshoot, traded_timestamp = simulate_trade(data)
     
@@ -542,6 +652,8 @@ def execution():
 
     open_plot = get_input_with_timeout("Open P/L plot (y/n)", "n", 5)
     
+    where_to_fetch_data = get_input_with_timeout("Fetch Data from ET else MC (y/n)", "y", 5)
+    
     trade_details, profit_points, loss_drawdown, profit_overshoot, traded_timestamp = simulate_trade(data)
     
     total_trade_taken, num_winning_trades, num_losing_trades, win_percentage, time_difference = result_params_calc(trade_details)
@@ -568,7 +680,7 @@ def execution():
     ]
     print(tabulate(summary_data, headers=["Metric", "Value"], tablefmt="grid"))
 
-    todays_data, data_ajusted = fetch_todays_data()
+    todays_data, data_ajusted = fetch_todays_data(where_to_fetch_data)
     print(" ")
     if data_ajusted:
         print("1Hr API Request Failed -----> Adjusted Data Thrown")
@@ -576,8 +688,6 @@ def execution():
     else:
         print("1Hr API Request Sucess -----> Live Data Thrown")
         print(" ")
-        
-    print(todays_data)
     
     if todays_data.empty:
         print(" ")
