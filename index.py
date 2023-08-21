@@ -465,10 +465,10 @@ def fetch_todays_data():
         # today_date = (datetime.now() - timedelta(days=2)).date()    #  TESTING ON 2 DAY BACK
         # today_date = (datetime.now() - timedelta(days=1)).date()  #  TESTING ON 1 DAY BACK
         today_date = datetime.now().date()                        #  Live
-        
         filtered_day_data = data_df[data_df['Date'].dt.date == today_date]
         filtered_day_data.set_index('Date', inplace=True)
-        todays_data = pd.DataFrame(columns=['Open', 'High', 'Low', 'Close', 'Volume'])
+        todays_data = filtered_day_data.rename_axis('Datetime').reset_index() 
+        
         return todays_data, data_ajusted
 
 
@@ -561,8 +561,12 @@ def execution():
     print(" ")
     if data_ajusted:
         print("1Hr API Request Failed -----> Adjusted Data Thrown")
+        print(" ")
     else:
         print("1Hr API Request Sucess -----> Live Data Thrown")
+        print(" ")
+        
+    print(todays_data)
     
     if todays_data.empty:
         print(" ")
@@ -591,7 +595,7 @@ def check_and_call_function():
     current_time = datetime.now().time()
     
     for hour in range(9, 16):  # From 9 AM to 3 PM
-        start_time = datetime_time(hour, 15)
+        start_time = datetime_time(hour, 14)
         end_time = datetime_time(hour, 20)
         
         if start_time <= current_time <= end_time:
