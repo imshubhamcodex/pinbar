@@ -615,7 +615,7 @@ def fetch_todays_trade(data):
     data.drop(columns=['Datetime'], inplace=True)
     data_fetch_date = str(data['Date'].iloc[-1]) + " " + str(data['Time'].iloc[-1]) 
     # print("\nLast Refresh ------->  " + ticker + " [" + data_fetch_date + "]")   
-    # print(" ")
+    print(" ")
     return trade_details
 
 
