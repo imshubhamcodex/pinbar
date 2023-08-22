@@ -15,6 +15,7 @@ import json
 
 ticker = ""  
 time_interval = "1h"
+where_to_fetch_data ="y"
 
 
 def main(stdscr, options, head):
@@ -38,15 +39,8 @@ def main(stdscr, options, head):
         elif key == 10:  # Enter key
             return options[current_option]
         curses.flushinp()
-
-if __name__ == "__main__":
-    
-    #menu_options = ["^NSEBANK", "^NSEI"]
-    menu_options = ["^NSEBANK"]
-    selected_option = curses.wrapper(main, menu_options, ":::::::::::::Choose Trading Asset::::::::::::")
-    if selected_option is not None:
-        ticker = selected_option
-               
+        
+        
         
 def get_input_with_timeout(prompt, default_value, timeout_sec):
     os.system('cls' if os.name == 'nt' else 'clear')
@@ -68,6 +62,15 @@ def get_input_with_timeout(prompt, default_value, timeout_sec):
     return user_input if user_input else default_value
 
 
+if __name__ == "__main__":
+    
+    #menu_options = ["^NSEBANK", "^NSEI"]
+    menu_options = ["^NSEBANK"]
+    selected_option = curses.wrapper(main, menu_options, ":::::::::::::Choose Trading Asset::::::::::::")
+    if selected_option is not None:
+        ticker = selected_option
+    where_to_fetch_data = get_input_with_timeout("Fetch Data from ET else MC (y/n)", where_to_fetch_data , 5)
+               
 
 def fetch_data(ticker, time_interval):
     end_date = datetime.today().date()
@@ -277,7 +280,7 @@ def print_txt(filename, data_to_print):
 
 def print_todays_trade(trades):
     print("Latest Trades:")
-    print("Today's Open Postion:")
+    print("Today's Open Posiition:")
     
     for i in range(len(trades)):
         latest_trade = trades[i]
@@ -652,8 +655,6 @@ def execution():
 
     open_plot = get_input_with_timeout("Open P/L plot (y/n)", "n", 5)
     
-    where_to_fetch_data = get_input_with_timeout("Fetch Data from ET else MC (y/n)", "y", 5)
-    
     trade_details, profit_points, loss_drawdown, profit_overshoot, traded_timestamp = simulate_trade(data)
     
     total_trade_taken, num_winning_trades, num_losing_trades, win_percentage, time_difference = result_params_calc(trade_details)
@@ -726,7 +727,7 @@ def check_and_call_function():
         end_timej = datetime_time(hour, 4)
         
         start_timek = datetime_time(hour, 29)
-        end_timek = datetime_time(hour, 34)
+        end_timek = datetime_time(hour, 35)
                 
         if start_timei <= current_time <= end_timei or start_timej <= current_time <= end_timej or start_timek <= current_time <= end_timek:
             execution()
@@ -735,5 +736,5 @@ def check_and_call_function():
 
 while True:
     check_and_call_function()
-    time.sleep(90)  # 90-second wait
+    time.sleep(60)  # 90-second wait
 
