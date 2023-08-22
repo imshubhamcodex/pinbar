@@ -614,8 +614,8 @@ def fetch_todays_trade(data):
     data['Time'] = data['Datetime'].dt.time
     data.drop(columns=['Datetime'], inplace=True)
     data_fetch_date = str(data['Date'].iloc[-1]) + " " + str(data['Time'].iloc[-1]) 
-    print("\nLast Refresh ------->  " + ticker + " [" + data_fetch_date + "]")   
-    print(" ")
+    # print("\nLast Refresh ------->  " + ticker + " [" + data_fetch_date + "]")   
+    # print(" ")
     return trade_details
 
 
@@ -721,7 +721,7 @@ def check_and_call_function():
     
     for hour in range(9, 16):  # From 9 AM to 3 PM
         start_timei = datetime_time(hour, 14)
-        end_timei = datetime_time(hour, 16)
+        end_timei = datetime_time(hour, 18)
         
         start_timej = datetime_time(hour, 0)
         end_timej = datetime_time(hour, 2)
