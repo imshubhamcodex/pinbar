@@ -721,13 +721,13 @@ def check_and_call_function():
     
     for hour in range(9, 16):  # From 9 AM to 3 PM
         start_timei = datetime_time(hour, 14)
-        end_timei = datetime_time(hour, 20)
+        end_timei = datetime_time(hour, 16)
         
-        start_timej = datetime_time(hour, 58)
-        end_timej = datetime_time(hour, 4)
+        start_timej = datetime_time(hour, 0)
+        end_timej = datetime_time(hour, 2)
         
-        start_timek = datetime_time(hour, 29)
-        end_timek = datetime_time(hour, 35)
+        start_timek = datetime_time(hour, 30)
+        end_timek = datetime_time(hour, 32)
                 
         if start_timei <= current_time <= end_timei or start_timej <= current_time <= end_timej or start_timek <= current_time <= end_timek:
             execution()
