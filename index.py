@@ -151,7 +151,7 @@ def simulate_trade(data):
                         data.iloc[i]['Low'] - entry_price)*earn_factor)
                 
                 if ticker == "^NSEBANK":
-                    stop_loss_points = 40      #Fixed it
+                    stop_loss_points = 25      #Fixed it
                     if take_profit_points < 30:
                         continue
                 else:
@@ -671,7 +671,7 @@ def execution():
     print("\nTrade Overview Details: " + ticker + " [" + data_fetch_date + "]")   
     summary_data = [
         ["Trade on Time Frame", "1Hr"],
-        ["Fixed SL","40"],
+        ["Fixed SL","25"],
         ["Minimum TP","30"],
         ["TP+ Offset","10"],
         ["Total Trade Taken",f"{total_trade_taken} (Win:{num_winning_trades} Loss:{num_losing_trades})"],
@@ -721,13 +721,13 @@ def check_and_call_function():
     
     for hour in range(9, 16):  # From 9 AM to 3 PM
         start_timei = datetime_time(hour, 14)
-        end_timei = datetime_time(hour, 18)
+        end_timei = datetime_time(hour, 16)
         
         start_timej = datetime_time(hour, 0)
-        end_timej = datetime_time(hour, 2)
+        end_timej = datetime_time(hour, 1)
         
         start_timek = datetime_time(hour, 30)
-        end_timek = datetime_time(hour, 32)
+        end_timek = datetime_time(hour, 31)
                 
         if start_timei <= current_time <= end_timei or start_timej <= current_time <= end_timej or start_timek <= current_time <= end_timek:
             execution()
@@ -736,5 +736,5 @@ def check_and_call_function():
 
 while True:
     check_and_call_function()
-    time.sleep(60)  # 90-second wait
+    time.sleep(30)  # 30-second wait
 
