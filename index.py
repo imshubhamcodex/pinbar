@@ -720,8 +720,8 @@ def check_and_call_function():
     current_time = datetime.now().time()
     
     for hour in range(9, 16):  # From 9 AM to 3 PM
-        start_timei = datetime_time(hour, 14)
-        end_timei = datetime_time(hour, 16)
+        start_timei = datetime_time(hour, 15)
+        end_timei = datetime_time(hour, 18)
         
         start_timej = datetime_time(hour, 0)
         end_timej = datetime_time(hour, 1)
