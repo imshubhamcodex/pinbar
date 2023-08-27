@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from tabulate import tabulate
 import time
 import json
+import os
 import requests
 from datetime import datetime, time as datetime_time
 
@@ -192,6 +193,9 @@ def fetch_todays_data_from_ET():
     current_date = pd.Timestamp.today()
     todays_data = df[df.index.date == current_date.date()]
     
+    
+    print("Fetched Sequence: ", len(todays_data))
+    print(" ")
     return todays_data
     
 
@@ -277,11 +281,14 @@ def backtest():
     trade_table, win_trade, loss_trade, total_profit = calc_trades_params(trades)
     
     print_metric(win_trade, loss_trade, total_profit, last_trade_date, first_trade_date, trade_table)
+    time.sleep(20)
+    
     main()
 
 
 # Main program
 def main():
+    os.system('cls' if os.name == 'nt' else 'clear')
     print(" ")
 
     
