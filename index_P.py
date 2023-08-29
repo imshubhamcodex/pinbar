@@ -1,4 +1,4 @@
-# pip install yfinance pandas matplotlib tabulate windows-curses
+# pip install yfinance pandas matplotlib tabulate windows-curses requests
 import yfinance as yf
 import pandas as pd
 from datetime import datetime, timedelta
@@ -13,8 +13,11 @@ import time
 from datetime import datetime, time as datetime_time
 import json
 
+from mercury_Bot import send_message
+
 ticker = ""  
 time_interval = "1h"
+todays_trade = 0
 where_to_fetch_data ="y"
 
 
@@ -587,11 +590,8 @@ def fetch_todays_trade(data):
     # new_rows_data1 = {'Open': 43810.148438, 'High': 43847.601562, 'Low': 43731.000000, 'Close': 43824.851562, 'Volume': 0}
     # # new_rows_data2 = {'Open': 43823.300781, 'High': 43934.699219, 'Low': 43810.750000, 'Close': 43913.449219, 'Volume': 0}
 
-    # rows_to_replace1 = '2023-08-21 10:15:00'
-    # # rows_to_replace2 = '2023-08-18 14:15:00'
-
-    # data.loc[rows_to_replace1] = new_rows_data1
-    # # data.loc[rows_to_replace2] = new_rows_data2
+    # Replace the second row values
+    # data.loc[data.index[1]] = new_rows_data1
     
     numeric_columns = ['Open', 'High', 'Low', 'Close']
     data[numeric_columns] = data[numeric_columns].apply(pd.to_numeric, errors='coerce')
@@ -613,7 +613,7 @@ def fetch_todays_trade(data):
     data['Date'] = data['Datetime'].dt.date
     data['Time'] = data['Datetime'].dt.time
     data.drop(columns=['Datetime'], inplace=True)
-    data_fetch_date = str(data['Date'].iloc[-1]) + " " + str(data['Time'].iloc[-1]) 
+    #data_fetch_date = str(data['Date'].iloc[-1]) + " " + str(data['Time'].iloc[-1]) 
     # print("\nLast Refresh ------->  " + ticker + " [" + data_fetch_date + "]")   
     print(" ")
     return trade_details
@@ -703,6 +703,22 @@ def execution():
     latest_trade = fetch_todays_trade(todays_data)
     print_todays_trade(latest_trade)
     print_txt("Trade_Live_"+ ticker + " " + str(datetime.now().date()) , latest_trade)
+    
+    global todays_trade
+    if(todays_trade + 1 == len(latest_trade)):
+        todays_trade += 1
+        text = (
+            "*Assest: " + ticker + "*\n"
+            "*Trade Type: " + str(latest_trade[-1][1]) + "*\n"
+            "*Entry Time: " + str(latest_trade[-1][2]).split(' ')[1] + "*\n"
+            "*Entry Price: " + str(latest_trade[-1][4]) + "*\n"
+            "*Take Profit: " + str(latest_trade[-1][9]) + "*\n"
+            "*Stop Loss: " + str(latest_trade[-1][10]) + "*\n"
+            "*Trade Strategy: Pinbar [1hr]*"
+        )
+        send_message(text)
+    
+    
     
     if open_plot.lower() == 'y':
         plot_chart(profit_points, loss_drawdown, profit_overshoot, traded_timestamp, open_plot)

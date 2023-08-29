@@ -1,3 +1,3 @@
 @echo off
-pip install yfinance pandas tabulate
+pip install yfinance pandas tabulate requests
 python "index_T.py"

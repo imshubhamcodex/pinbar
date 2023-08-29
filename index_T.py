@@ -8,10 +8,15 @@ import os
 import requests
 from datetime import datetime, time as datetime_time
 
+from mercury_Bot import send_message
+
+
+
+
 # Ticker symbol for NSE Bank Index
 ticker = "^NSEBANK"
 time_interval = "15m"
-
+todays_trade = 0
 
 # Fetch data
 def fetch_data(ticker, time_interval):
@@ -291,6 +296,7 @@ def main():
     os.system('cls' if os.name == 'nt' else 'clear')
     print(" ")
 
+    global todays_trade
     
     # Fetch Live data
     data = fetch_todays_data_from_ET()
@@ -303,6 +309,22 @@ def main():
  
     trades = simulate_trades(data, pattern_results)
     trade_table, win_trade, loss_trade, total_profit = calc_trades_params(trades)
+   
+    if(todays_trade + 1 == len(trade_table)):
+        todays_trade += 1
+
+        text = (
+            "*Assest: " + ticker + "*\n"
+            "*Trade Type: " + str(trade_table[-1][1]) + "*\n"
+            "*Entry Time: " + str(trade_table[-1][2]).split(' ')[1] + "*\n"
+            "*Entry Price: " + str(trade_table[-1][3]) + "*\n"
+            "*Take Profit: " + " Take Profit: 70 pts."  + "*\n"
+            "*Stop Loss: " + " Stop Loss: 45 pts"+ "*\n"
+            "*Trade Strategy: Tweezer [15min]*"
+        )
+        send_message(text)
+        
+    
     print("Live Trade Details: ----------")
     print_metric(win_trade, loss_trade, total_profit, last_trade_date, first_trade_date, trade_table)
     print(" ")
