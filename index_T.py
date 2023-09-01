@@ -306,7 +306,9 @@ def main():
     first_trade_date, last_trade_date = pattern_table(pattern_results)
     data = data_with_pattern
 
- 
+    print(data)
+    print(" ")
+    
     trades = simulate_trades(data, pattern_results)
     trade_table, win_trade, loss_trade, total_profit = calc_trades_params(trades)
    
@@ -329,7 +331,7 @@ def main():
     print_metric(win_trade, loss_trade, total_profit, last_trade_date, first_trade_date, trade_table)
     print(" ")
     print("\nMade with ","♥", " : https://github.com/imshubhamcodex/")
-    
+    print(" ")
     
     
     
