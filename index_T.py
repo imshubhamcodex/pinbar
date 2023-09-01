@@ -340,6 +340,8 @@ backtest()
 def check_and_call_function():
     current_time = datetime.now().time()
     
+    print("\r" +"Time: "+ str(current_time), end='', flush=True)
+        
     for hour in range(9, 16):  # From 9 AM to 3 PM
         start_timei = datetime_time(hour, 15)
         end_timei = datetime_time(hour, 17)
@@ -361,7 +363,7 @@ def check_and_call_function():
 
 while True:
     check_and_call_function()
-    time.sleep(30)  # 30-second wait
+    time.sleep(20)  # 20-second wait
 
 
 
