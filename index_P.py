@@ -12,6 +12,7 @@ import requests
 import time
 from datetime import datetime, time as datetime_time
 import json
+from pytz import timezone
 
 from mercury_Bot import send_message
 
@@ -72,7 +73,7 @@ if __name__ == "__main__":
     selected_option = curses.wrapper(main, menu_options, ":::::::::::::Choose Trading Asset::::::::::::")
     if selected_option is not None:
         ticker = selected_option
-    where_to_fetch_data = get_input_with_timeout("Fetch Data from ET else MC (y/n)", where_to_fetch_data , 5)
+    where_to_fetch_data = get_input_with_timeout("Fetch Data from YF (y/n)", where_to_fetch_data , 5)
                
 
 def fetch_data(ticker, time_interval):
@@ -139,8 +140,8 @@ def simulate_trade(data):
                 trade_type = "Short" if data.iloc[i]['IsRedPinbar'] else "Long"
                 
                 exit_price = 0
-                inv_loss_factor = 1.8
-                earn_factor = 0.4
+                inv_loss_factor = 0.1
+                earn_factor = 1.8
 
                 if trade_type == "Short":
                     stop_loss_points = abs((
@@ -152,15 +153,11 @@ def simulate_trade(data):
                         entry_price - data.iloc[i]['High'])/inv_loss_factor)
                     take_profit_points = abs((
                         data.iloc[i]['Low'] - entry_price)*earn_factor)
+                    
+                    
+                if  stop_loss_points < 30 or take_profit_points/stop_loss_points < 0.35:
+                    continue
                 
-                if ticker == "^NSEBANK":
-                    stop_loss_points = 25      #Fixed it
-                    if take_profit_points < 30:
-                        continue
-                else:
-                    stop_loss_points = 25
-                    if take_profit_points < 10:
-                        continue
 
                 stop_loss_price = entry_price + stop_loss_points if data.iloc[i]['IsRedPinbar'] else entry_price - stop_loss_points
                 take_profit_price = entry_price - take_profit_points if data.iloc[i]['IsRedPinbar'] else entry_price + take_profit_points
@@ -173,8 +170,13 @@ def simulate_trade(data):
                 
                 for j in range(i + 1, len(data)):
                     next_row = data.iloc[j]
+ 
                     if trade_type == "Short":
-                        if next_row['Low'] <= take_profit_price:
+                        if next_row['High'] >= stop_loss_price:
+                            exit_price = stop_loss_price
+                            exit_trade_index = j
+                            break
+                        elif next_row['Low'] <= take_profit_price:
                             if take_profit_points < 40  or (take_profit_points >= 55 and take_profit_points < 90) :
                                 exit_price = take_profit_price - 10
                                 trail_tp = True
@@ -183,22 +185,18 @@ def simulate_trade(data):
                                 trail_tp = False
                             exit_trade_index = j
                             break
-                        elif next_row['High'] >= stop_loss_price:
-                            exit_price = stop_loss_price
+                    else:
+                        if next_row['Low'] <= stop_loss_price:
+                            exit_price = stop_loss_price  
                             exit_trade_index = j
                             break
-                    else:
-                        if next_row['High'] >= take_profit_price:
+                        elif next_row['High'] >= take_profit_price:
                             if take_profit_points < 40  or (take_profit_points >= 55 and take_profit_points < 70) :
                                 exit_price = take_profit_price + 10
                                 trail_tp = True
                             else: 
                                 exit_price = take_profit_price
                                 trail_tp = False
-                            exit_trade_index = j
-                            break
-                        elif next_row['Low'] <= stop_loss_price:
-                            exit_price = stop_loss_price  
                             exit_trade_index = j
                             break
 
@@ -497,6 +495,72 @@ def fetch_todays_data_from_ET():
     return result_df
 
 
+
+def fetch_todays_data_from_YF():
+    current_datetime =  str(datetime.today().date())
+    date_obj = datetime.strptime(current_datetime, "%Y-%m-%d")
+    today_timestamp = str(date_obj.timestamp()).split('.')[0]
+    current_timestamp = str(time.mktime(time.localtime())).split('.')[0]
+    
+    headers = {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Cache-Control": "max-age=0",
+        "Sec-Ch-Ua": "\"Not/A)Brand\";v=\"99\", \"Microsoft Edge\";v=\"115\", \"Chromium\";v=\"115\"",
+        "Sec-Ch-Ua-Mobile": "?0",
+        "Sec-Ch-Ua-Platform": "\"Windows\"",
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-User": "?1",
+        "Upgrade-Insecure-Requests": "1",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36 Edg/115.0.1901.203",
+        "Referer": "https://query1.finance.yahoo.com/v8/finance/chart/%5ENSEBANK?symbol=%5ENSEBANK&period1="+ today_timestamp +"&period2=" + current_timestamp + "&useYfid=true&interval=1h&includePrePost=true&events=div%7Csplit%7Cearn&lang=en-US&region=US&crumb=pRymmeKo5Qz&corsDomain=finance.yahoo.com"
+    }
+    url = ("https://query1.finance.yahoo.com/v8/finance/chart/%5ENSEBANK?symbol=%5ENSEBANK&period1="+ today_timestamp +"&period2=" + current_timestamp + "&useYfid=true&interval=1h&includePrePost=true&events=div%7Csplit%7Cearn&lang=en-US&region=US&crumb=pRymmeKo5Qz&corsDomain=finance.yahoo.com")
+    
+    response = requests.get(url,headers=headers)
+    json_data = response.json()
+    
+    timestamp = json_data['chart']['result'][0]['timestamp']
+    open_prices = json_data['chart']['result'][0]['indicators']['quote'][0]['open']
+    high_prices = json_data['chart']['result'][0]['indicators']['quote'][0]['high']
+    low_prices = json_data['chart']['result'][0]['indicators']['quote'][0]['low']
+    close_prices = json_data['chart']['result'][0]['indicators']['quote'][0]['close']
+
+    df = pd.DataFrame({
+        "Time Frame": timestamp,
+        "Open": open_prices,
+        "High": high_prices,
+        "Low": low_prices,
+        "Close": close_prices
+    })
+
+    ist = timezone('Asia/Kolkata')
+    df['Time Frame'] = pd.to_datetime(df['Time Frame'], unit='s').dt.tz_localize('UTC').dt.tz_convert(ist)
+    df['Time Frame'] = pd.to_datetime(df['Time Frame'], unit='s')
+        
+    result_df = pd.DataFrame(df)
+    current_date = datetime.now().date()
+
+    if not result_df.empty:
+        result_df['Time Frame'] = pd.to_datetime(result_df['Time Frame'], format='%H:%M:%S').apply(lambda x: x.replace(year=current_date.year, month=current_date.month, day=current_date.day))
+        result_df.rename(columns={'Time Frame': 'Date'}, inplace=True)
+        result_df.set_index('Date', inplace=True)
+
+      
+        data_df = pd.DataFrame(result_df)
+        data_df['Date'] = pd.to_datetime(data_df.index)
+        data_df.drop(columns=['Date'], inplace=True)
+        todays_data = data_df.rename_axis('Datetime').reset_index()
+        return todays_data
+    
+    return result_df
+
+
+
+
 def fetch_data_from_MC():
     data_ajusted = False
     
@@ -574,12 +638,15 @@ def fetch_todays_data(where_to_fetch):
         
     if(enable_ET_fetch):
         print(" ")
-        print("Live Data Fetching From ET...")
+        print("Live Data Fetching From YF...")
         print(" ")
-        todays_data = fetch_todays_data_from_ET()
+        todays_data = fetch_todays_data_from_YF()
         return todays_data, data_ajusted
     else:
-        todays_data, data_ajusted = fetch_data_from_MC()
+        print(" ")
+        print("Live Data Fetching From ET...")
+        print(" ")
+        todays_data, data_ajusted = fetch_todays_data_from_ET()
         return todays_data, data_ajusted
     
     
@@ -684,10 +751,10 @@ def execution():
     todays_data, data_ajusted = fetch_todays_data(where_to_fetch_data)
     print(" ")
     if data_ajusted:
-        print("1Hr API Request Failed -----> Adjusted Data Thrown")
+        print("1Hr API Request Adjusted")
         print(" ")
     else:
-        print("1Hr API Request Sucess -----> Live Data Thrown")
+        print("1Hr API Request Sucess")
         print(" ")
     
     if todays_data.empty:
@@ -710,11 +777,11 @@ def execution():
         text = (
             "*Assest: " + ticker + "*\n"
             "*Trade Type: " + str(latest_trade[-1][1]) + "*\n"
-            "*Entry Time: " + str(latest_trade[-1][2]).split(' ')[1] + "*\n"
             "*Entry Price: " + str(latest_trade[-1][4]) + "*\n"
+            "*Entry Time: " + str(latest_trade[-1][2]).split(' ')[1] + "@ [candle close]"+"*\n"
             "*Take Profit: " + str(latest_trade[-1][9]) + "*\n"
             "*Stop Loss: " + str(latest_trade[-1][10]) + "*\n"
-            "*Trade Strategy: Pinbar [1hr]*"
+            "*Strategy: Pinbar @ [1hr]*"
         )
         send_message(text)
     

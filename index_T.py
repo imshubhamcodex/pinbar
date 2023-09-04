@@ -7,6 +7,7 @@ import json
 import os
 import requests
 from datetime import datetime, time as datetime_time
+from pytz import timezone
 
 from mercury_Bot import send_message
 
@@ -84,6 +85,7 @@ def detect_patterns(data):
         elif is_bearish_tweezer(data, i):
             pattern_results.append((data.index[i], "Bearish Tweezer"))
             data.at[data.index[i], 'Pattern'] = "Bearish Tweezer"
+
     return pattern_results, data
 
 
@@ -100,14 +102,14 @@ def simulate_trades(data, pattern_results):
 
         if pattern == up_check:
             entry_price = data.loc[date]['Close']
-            stop_loss_price = entry_price - 45
-            take_profit_price = entry_price + 70
+            stop_loss_price = entry_price - 60
+            take_profit_price = entry_price + 50
             position = take_trade(stop_loss_price, take_profit_price, pattern, date, data, up_check, down_ckeck)
 
         elif pattern == down_ckeck:
             entry_price = data.loc[date]['Close']  
-            stop_loss_price = entry_price + 45
-            take_profit_price = entry_price - 70
+            stop_loss_price = entry_price + 60
+            take_profit_price = entry_price - 50
             position = take_trade(stop_loss_price, take_profit_price, pattern, date, data, up_check, down_ckeck)
        
         trades.append(position)
@@ -202,7 +204,69 @@ def fetch_todays_data_from_ET():
     print("Fetched Sequence: ", len(todays_data))
     print(" ")
     return todays_data
+
+
+def fetch_todays_data_from_YF():
+    current_datetime =  str(datetime.today().date())
+    date_obj = datetime.strptime(current_datetime, "%Y-%m-%d")
+    today_timestamp = str(date_obj.timestamp()).split('.')[0]
+    current_timestamp = str(time.mktime(time.localtime())).split('.')[0]
     
+    headers = {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Cache-Control": "max-age=0",
+        "Sec-Ch-Ua": "\"Not/A)Brand\";v=\"99\", \"Microsoft Edge\";v=\"115\", \"Chromium\";v=\"115\"",
+        "Sec-Ch-Ua-Mobile": "?0",
+        "Sec-Ch-Ua-Platform": "\"Windows\"",
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-User": "?1",
+        "Upgrade-Insecure-Requests": "1",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36 Edg/115.0.1901.203",
+        "Referer": "https://query1.finance.yahoo.com/v8/finance/chart/%5ENSEBANK?symbol=%5ENSEBANK&period1="+ today_timestamp +"&period2=" + current_timestamp + "&useYfid=true&interval=15m&includePrePost=true&events=div%7Csplit%7Cearn&lang=en-US&region=US&crumb=pRymmeKo5Qz&corsDomain=finance.yahoo.com"
+    }
+    url = ("https://query1.finance.yahoo.com/v8/finance/chart/%5ENSEBANK?symbol=%5ENSEBANK&period1="+ today_timestamp +"&period2=" + current_timestamp + "&useYfid=true&interval=15m&includePrePost=true&events=div%7Csplit%7Cearn&lang=en-US&region=US&crumb=pRymmeKo5Qz&corsDomain=finance.yahoo.com")
+    
+    response = requests.get(url,headers=headers)
+    json_data = response.json()
+    
+    timestamp = json_data['chart']['result'][0]['timestamp']
+    open_prices = json_data['chart']['result'][0]['indicators']['quote'][0]['open']
+    high_prices = json_data['chart']['result'][0]['indicators']['quote'][0]['high']
+    low_prices = json_data['chart']['result'][0]['indicators']['quote'][0]['low']
+    close_prices = json_data['chart']['result'][0]['indicators']['quote'][0]['close']
+
+    df = pd.DataFrame({
+        "Time Frame": timestamp,
+        "Open": open_prices,
+        "High": high_prices,
+        "Low": low_prices,
+        "Close": close_prices
+    })
+
+    ist = timezone('Asia/Kolkata')
+    df['Time Frame'] = pd.to_datetime(df['Time Frame'], unit='s').dt.tz_localize('UTC').dt.tz_convert(ist)
+    df['Time Frame'] = pd.to_datetime(df['Time Frame'], unit='s')
+        
+    result_df = pd.DataFrame(df)
+    current_date = datetime.now().date()
+
+    if not result_df.empty:
+        result_df['Time Frame'] = pd.to_datetime(result_df['Time Frame'], format='%H:%M:%S').apply(lambda x: x.replace(year=current_date.year, month=current_date.month, day=current_date.day))
+        result_df.rename(columns={'Time Frame': 'Date'}, inplace=True)
+        result_df.set_index('Date', inplace=True)
+
+      
+        data_df = pd.DataFrame(result_df)
+        data_df['Date'] = pd.to_datetime(data_df.index)
+        data_df.drop(columns=['Date'], inplace=True)
+        todays_data = data_df.rename_axis('Datetime').reset_index()
+        return todays_data
+    
+    return result_df
 
 
 def pattern_table(pattern_results):
@@ -260,8 +324,8 @@ def print_metric(win_trade, loss_trade, total_profit, last_trade_date, first_tra
     
     summary_data = [
         ["Trade on Time Frame", "15 Min."],
-        ["Fixed SL","45"],
-        ["Fixed TP","70"],
+        ["Fixed SL","60"],
+        ["Fixed TP","50"],
         ["Total Trade Taken",f"{win_trade + loss_trade} (Win:{win_trade} Loss:{loss_trade})"],
         ["Cumm. Profit Points", f"{total_profit:.2f}"],
         ["Win Percent:", round(win_percentage, 2), "%"],
@@ -299,30 +363,31 @@ def main():
     global todays_trade
     
     # Fetch Live data
-    data = fetch_todays_data_from_ET()
-    data = data[::-1]
+    data = fetch_todays_data_from_YF()
+    data = pd.DataFrame(data)
+    data['Datetime'] = pd.to_datetime(data['Datetime'])
+    data.set_index('Datetime', inplace=True)
+    
     data_with_characteristics = calculate_candlestick_characteristics(data)
     pattern_results, data_with_pattern = detect_patterns(data_with_characteristics)
     first_trade_date, last_trade_date = pattern_table(pattern_results)
     data = data_with_pattern
 
     print(data)
-    print(" ")
     
     trades = simulate_trades(data, pattern_results)
     trade_table, win_trade, loss_trade, total_profit = calc_trades_params(trades)
    
     if(todays_trade + 1 == len(trade_table)):
         todays_trade += 1
-
         text = (
             "*Assest: " + ticker + "*\n"
             "*Trade Type: " + str(trade_table[-1][1]) + "*\n"
-            "*Entry Time: " + str(trade_table[-1][2]).split(' ')[1] + "*\n"
             "*Entry Price: " + str(trade_table[-1][3]) + "*\n"
-            "*Take Profit: " + " Take Profit: 70 pts."  + "*\n"
-            "*Stop Loss: " + " Stop Loss: 45 pts"+ "*\n"
-            "*Trade Strategy: Tweezer [15min]*"
+            "*Entry Time: " + str(trade_table[-1][2]).split(' ')[1] + " @ [candle close]"+"*\n"
+            "*Take Profit: " + " Take Profit: 50 pts."  + "*\n"
+            "*Stop Loss: " + " Stop Loss: 60 pts"+ "*\n"
+            "*Trade Strategy: Tweezer @ [15min]*"
         )
         send_message(text)
         
