@@ -384,10 +384,10 @@ def main():
             "*Assest: " + ticker + "*\n"
             "*Trade Type: " + str(trade_table[-1][1]) + "*\n"
             "*Entry Price: " + str(trade_table[-1][3]) + "*\n"
-            "*Entry Time: " + str(trade_table[-1][2]).split(' ')[1] + " @ [candle close]"+"*\n"
-            "*Take Profit: " + " Take Profit: 50 pts."  + "*\n"
-            "*Stop Loss: " + " Stop Loss: 60 pts"+ "*\n"
-            "*Trade Strategy: Tweezer @ [15min]*"
+            "*Entry Time: " + str(trade_table[-1][2]).split(' ')[1].split('+')[0] + " @ [close]"+"*\n"
+            "*Take Profit: " + "50"  + "*\n"
+            "*Stop Loss: " + "60"+ "*\n"
+            "*Strategy: Tweezer @ [15min]*"
         )
         send_message(text)
         

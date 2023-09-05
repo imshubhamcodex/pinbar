@@ -778,7 +778,7 @@ def execution():
             "*Assest: " + ticker + "*\n"
             "*Trade Type: " + str(latest_trade[-1][1]) + "*\n"
             "*Entry Price: " + str(latest_trade[-1][4]) + "*\n"
-            "*Entry Time: " + str(latest_trade[-1][2]).split(' ')[1] + "@ [candle close]"+"*\n"
+            "*Entry Time: " + str(latest_trade[-1][2]).split(' ')[1].split('+')[0] + " @ [close]"+"*\n"
             "*Take Profit: " + str(latest_trade[-1][9]) + "*\n"
             "*Stop Loss: " + str(latest_trade[-1][10]) + "*\n"
             "*Strategy: Pinbar @ [1hr]*"
