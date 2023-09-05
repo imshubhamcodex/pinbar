@@ -738,8 +738,6 @@ def execution():
     print("\nTrade Overview Details: " + ticker + " [" + data_fetch_date + "]")   
     summary_data = [
         ["Trade on Time Frame", "1Hr"],
-        ["Fixed SL","25"],
-        ["Minimum TP","30"],
         ["TP+ Offset","10"],
         ["Total Trade Taken",f"{total_trade_taken} (Win:{num_winning_trades} Loss:{num_losing_trades})"],
         ["Cumm. Profit Points", f"{trade_details[-1][8]:.2f}"],
