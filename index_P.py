@@ -523,40 +523,41 @@ def fetch_todays_data_from_YF():
     response = requests.get(url,headers=headers)
     json_data = response.json()
     
-    timestamp = json_data['chart']['result'][0]['timestamp']
-    open_prices = json_data['chart']['result'][0]['indicators']['quote'][0]['open']
-    high_prices = json_data['chart']['result'][0]['indicators']['quote'][0]['high']
-    low_prices = json_data['chart']['result'][0]['indicators']['quote'][0]['low']
-    close_prices = json_data['chart']['result'][0]['indicators']['quote'][0]['close']
+    if 'timestamp' in json_data['chart']['result'][0]:
+        timestamp = json_data['chart']['result'][0]['timestamp']
+        open_prices = json_data['chart']['result'][0]['indicators']['quote'][0]['open']
+        high_prices = json_data['chart']['result'][0]['indicators']['quote'][0]['high']
+        low_prices = json_data['chart']['result'][0]['indicators']['quote'][0]['low']
+        close_prices = json_data['chart']['result'][0]['indicators']['quote'][0]['close']
 
-    df = pd.DataFrame({
-        "Time Frame": timestamp,
-        "Open": open_prices,
-        "High": high_prices,
-        "Low": low_prices,
-        "Close": close_prices
-    })
+        df = pd.DataFrame({
+            "Time Frame": timestamp,
+            "Open": open_prices,
+            "High": high_prices,
+            "Low": low_prices,
+            "Close": close_prices
+        })
 
-    ist = timezone('Asia/Kolkata')
-    df['Time Frame'] = pd.to_datetime(df['Time Frame'], unit='s').dt.tz_localize('UTC').dt.tz_convert(ist)
-    df['Time Frame'] = pd.to_datetime(df['Time Frame'], unit='s')
+        ist = timezone('Asia/Kolkata')
+        df['Time Frame'] = pd.to_datetime(df['Time Frame'], unit='s').dt.tz_localize('UTC').dt.tz_convert(ist)
+        df['Time Frame'] = pd.to_datetime(df['Time Frame'], unit='s')
+            
+        result_df = pd.DataFrame(df)
+        current_date = datetime.now().date()
+
+        if not result_df.empty:
+            result_df['Time Frame'] = pd.to_datetime(result_df['Time Frame'], format='%H:%M:%S').apply(lambda x: x.replace(year=current_date.year, month=current_date.month, day=current_date.day))
+            result_df.rename(columns={'Time Frame': 'Date'}, inplace=True)
+            result_df.set_index('Date', inplace=True)
+
         
-    result_df = pd.DataFrame(df)
-    current_date = datetime.now().date()
-
-    if not result_df.empty:
-        result_df['Time Frame'] = pd.to_datetime(result_df['Time Frame'], format='%H:%M:%S').apply(lambda x: x.replace(year=current_date.year, month=current_date.month, day=current_date.day))
-        result_df.rename(columns={'Time Frame': 'Date'}, inplace=True)
-        result_df.set_index('Date', inplace=True)
-
-      
-        data_df = pd.DataFrame(result_df)
-        data_df['Date'] = pd.to_datetime(data_df.index)
-        data_df.drop(columns=['Date'], inplace=True)
-        todays_data = data_df.rename_axis('Datetime').reset_index()
-        return todays_data
+            data_df = pd.DataFrame(result_df)
+            data_df['Date'] = pd.to_datetime(data_df.index)
+            data_df.drop(columns=['Date'], inplace=True)
+            todays_data = data_df.rename_axis('Datetime').reset_index()
+            return todays_data
     
-    return result_df
+    return pd.DataFrame({})
 
 
 
@@ -755,7 +756,7 @@ def execution():
         print("1Hr API Request Sucess")
         print(" ")
     
-    if todays_data.empty:
+    if todays_data.empty or len(todays_data) == 0:
         print(" ")
         print("NO DATA [DATE OR TIME NOK]", todays_data)
         if open_plot.lower() == 'y':
