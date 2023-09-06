@@ -379,7 +379,8 @@ def main():
     pattern_results, data_with_pattern = detect_patterns(data_with_characteristics)
     first_trade_date, last_trade_date = pattern_table(pattern_results)
     data = data_with_pattern
-
+    
+    data = data[data['Body'] != 0.0]
     print(data)
     
     trades = simulate_trades(data, pattern_results)

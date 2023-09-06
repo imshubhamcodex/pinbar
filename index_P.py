@@ -93,7 +93,7 @@ def is_red_pinbar(open_price, high_price, low_price, close_price, trend_directio
     upper_shadow = high_price - max(open_price, close_price)
     lower_shadow = min(open_price, close_price) - low_price
 
-    if body / total_range < 0.3 and upper_shadow / total_range > 0.6 and lower_shadow / upper_shadow < 0.35 and total_range > 40:
+    if body / total_range < 0.3 and upper_shadow / total_range > 0.6 and lower_shadow / upper_shadow < 0.36 and total_range > 40:
         return True
     return False
 
@@ -108,7 +108,7 @@ def is_green_pinbar(open_price, high_price, low_price, close_price, trend_direct
     upper_shadow = high_price - max(open_price, close_price)
     lower_shadow = min(open_price, close_price) - low_price
 
-    if body / total_range < 0.3 and lower_shadow / total_range > 0.6 and upper_shadow / lower_shadow < 0.35 and total_range > 40:
+    if body / total_range < 0.3 and lower_shadow / total_range > 0.6 and upper_shadow / lower_shadow < 0.36 and total_range > 40:
         return True
     return False
 
@@ -720,7 +720,8 @@ def execution():
     data['Body'] = abs(data['Open'] - data['Close'])
     data['Upper Shadow'] = data['High'] - data[['Open', 'Close']].max(axis=1)
     data['Lower Shadow'] = data[['Open', 'Close']].min(axis=1) - data['Low']
-
+    data = data[data['Body'] != 0.0]
+    
     open_plot = get_input_with_timeout("Open P/L plot (y/n)", "n", 5)
     
     trade_details, profit_points, loss_drawdown, profit_overshoot, traded_timestamp = simulate_trade(data)
